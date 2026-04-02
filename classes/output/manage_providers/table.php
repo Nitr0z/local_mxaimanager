@@ -14,11 +14,13 @@ class table extends \local_mxaimanager\app\table
 {
     private base_factory $base_factory;
     private \moodle_url $url;
+    private bool $ai_pack_owned;
 
-    public function __construct(base_factory $base_factory, \moodle_url $url)
+    public function __construct(base_factory $base_factory, \moodle_url $url, bool $ai_pack_owned = true)
     {
         $this->base_factory = $base_factory;
         $this->url = $url;
+        $this->ai_pack_owned = $ai_pack_owned;
 
         $headers = [];
         $columns = [];
@@ -83,7 +85,7 @@ class table extends \local_mxaimanager\app\table
     protected function col_actions(object $record): string
     {
         return $this->base_factory->output()->render(
-            new table_actions($record->id)
+            new table_actions($record->id, $this->ai_pack_owned)
         );
     }
 }

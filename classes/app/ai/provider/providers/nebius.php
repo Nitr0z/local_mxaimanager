@@ -48,46 +48,39 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
+    private const CHAT_MODELS = [
+        'meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-8B-Instruct',
+        'Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3',
+        'mistralai/Mistral-Nemo-Instruct-2407',
+    ];
+
+    private const EMBEDDING_MODELS = [
+        'BAAI/bge-en-icl', 'intfloat/multilingual-e5-large-instruct', 'BAAI/bge-m3',
+    ];
+
+    private const IMAGE_MODELS = [
+        'black-forest-labs/FLUX.1-schnell', 'stability-ai/sdxl',
+    ];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}chat_model",
-            get_string('default_chat_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\chat_completion::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}chat_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}chat_model", 'nebius_chat_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'chat_model',
+            'default_chat_model', 'nebius_chat_model',
+            interfaces\chat_completion::class, self::CHAT_MODELS);
     }
 
     private static function add_embedding_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}embedding_model",
-            get_string('default_embedding_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_embedding::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}embedding_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}embedding_model", 'nebius_embedding_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'embedding_model',
+            'default_embedding_model', 'nebius_embedding_model',
+            interfaces\create_embedding::class, self::EMBEDDING_MODELS);
     }
 
     private static function add_image_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}image_model",
-            get_string('default_image_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_image::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}image_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}image_model", 'nebius_image_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'image_model',
+            'default_image_model', 'nebius_image_model',
+            interfaces\create_image::class, self::IMAGE_MODELS);
     }
 
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void

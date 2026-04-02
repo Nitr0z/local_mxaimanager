@@ -28,6 +28,8 @@ $string['ollama_chat_model'] = 'Ollama Chat Model';
 $string['ollama_chat_model_help'] = 'Here you can specify the chat model that should be used. For example: <strong>llama2</strong>, <strong>vicuna</strong>, etc. Refer to your Ollama\'s provider for available models.';
 $string['nebius_chat_model'] = 'Nebius Chat Model';
 $string['nebius_chat_model_help'] = 'Here you can specify the chat model that should be used. For example: <strong>Qwen/Qwen3-32B-fast</strong>, <strong>Qwen/Qwen3-30B-A3B-Instruct-2507</strong>, etc. Refer to Nebius\'s documentation for available models.';
+$string['scaleway_chat_model'] = 'Scaleway Chat Model';
+$string['scaleway_chat_model_help'] = 'Specify the chat model to use. For example: <strong>llama-3.3-70b-instruct</strong>, <strong>qwen2.5-72b-instruct</strong>, <strong>deepseek-r1</strong>. Refer to Scaleway\'s documentation for available models.';
 $string['openai_embedding_model'] = 'OpenAI Embedding Model';
 $string['openai_embedding_model_help'] = 'Here you can specify the embedding model that should be used. For example: <strong>text-embedding-3-small</strong>, <strong>text-embedding-3-large</strong>, etc. Refer to OpenAI\'s documentation for available embedding models.';
 $string['mistral_embedding_model'] = 'Mistral Embedding Model';
@@ -36,14 +38,23 @@ $string['ollama_embedding_model'] = 'Ollama Embedding Model';
 $string['ollama_embedding_model_help'] = 'Here you can specify the embedding model that should be used. For example: <strong>nomic-embed-text</strong>, etc. Refer to your Ollama\'s provider for available embedding models.';
 $string['nebius_embedding_model'] = 'Nebius Embedding Model';
 $string['nebius_embedding_model_help'] = 'Here you can specify the embedding model that should be used. For example: <strong>Qwen/Qwen3-Embedding-8B</strong>, etc. Refer to Nebius\'s documentation for available embedding models.';
+$string['scaleway_embedding_model'] = 'Scaleway Embedding Model';
+$string['scaleway_embedding_model_help'] = 'Specify the embedding model to use. For example: <strong>sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2</strong>, <strong>baai/bge-multilingual-gemma2</strong>. Refer to Scaleway\'s documentation for available embedding models.';
 $string['openai_image_model'] = 'OpenAI Image Model';
 $string['openai_image_model_help'] = 'Here you can specify the image generation model that should be used. For example: <strong>dall-e-3</strong>, <strong>dall-e-2</strong>, etc. Refer to OpenAI\'s documentation for available image generation models.';
 $string['nebius_image_model'] = 'Nebius Image Model';
 $string['nebius_image_model_help'] = 'Here you can specify the image generation model that should be used. For example: <strong>black-forest-labs/flux-dev</strong>. Refer to Nebius\'s documentation for available image generation models.';
+$string['scaleway_image_model'] = 'Scaleway Image Model';
+$string['scaleway_image_model_help'] = 'Specify the image generation model to use. For example: <strong>black-forest-labs/flux-schnell</strong>, <strong>black-forest-labs/flux-dev</strong>. Refer to Scaleway\'s documentation for available image models.';
 $string['openai_transcription_model'] = 'OpenAI Transcription Model';
 $string['openai_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>whisper-1</strong>. Refer to OpenAI\'s documentation for available transcription models.';
 $string['mistral_transcription_model'] = 'Mistral Transcription Model';
 $string['mistral_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>mistral-whisper</strong>. Refer to Mistral\'s documentation for available transcription models.';
+$string['openai_tts_model'] = 'OpenAI TTS Model';
+$string['openai_tts_model_help'] = 'Here you can specify the text-to-speech model that should be used. For example: <strong>tts-1</strong>, <strong>tts-1-hd</strong>, etc. Refer to OpenAI\'s documentation for available TTS models.';
+$string['default_tts_model'] = 'Default TTS Model';
+$string['uses_speech_synthesis'] = 'Speech Synthesis';
+$string['supports_speech_synthesis'] = 'Supports Speech Synthesis';
 
 // Manage Features
 $string['manage_features:title'] = 'AI Features';
@@ -62,6 +73,7 @@ $string['uses_audio_transcriptions'] = 'Audio Transcriptions';
 
 $string['base_url'] = 'Base URL';
 $string['api_key'] = 'API Key';
+$string['model_type_or_select'] = 'Select a model or type a custom one...';
 $string['default_chat_model'] = 'Default Chat Model';
 $string['default_embedding_model'] = 'Default Embedding Model';
 $string['default_image_model'] = 'Default Image Model';
@@ -82,6 +94,52 @@ $string['this_provider_is_preconfigured_no_modify'] = 'This provider instance is
 
 // Settings
 $string['settings:manage_page'] = 'Manage AI Settings';
+$string['settings:quota_page'] = 'Token Quota';
+$string['settings:freemium_page'] = 'Freemium Provider';
+
+// Global Token Quota
+$string['quota_heading'] = 'Freemium Token Quotas';
+$string['quota_heading_desc'] = 'These quotas only apply to the built-in Freemium provider. Custom provider instances (OpenAI, Mistral, etc.) are unlimited and not affected by these limits. Set to 0 for unlimited.';
+
+$string['daily_input_quota'] = 'Daily input token quota';
+$string['daily_input_quota_desc'] = 'Maximum input tokens allowed per day. Set to 0 for unlimited.';
+$string['daily_output_quota'] = 'Daily output token quota';
+$string['daily_output_quota_desc'] = 'Maximum output tokens allowed per day. Set to 0 for unlimited.';
+
+$string['weekly_input_quota'] = 'Weekly input token quota';
+$string['weekly_input_quota_desc'] = 'Maximum input tokens allowed per week (resets on Monday). Set to 0 for unlimited.';
+$string['weekly_output_quota'] = 'Weekly output token quota';
+$string['weekly_output_quota_desc'] = 'Maximum output tokens allowed per week (resets on Monday). Set to 0 for unlimited.';
+
+$string['monthly_input_quota'] = 'Monthly input token quota';
+$string['monthly_input_quota_desc'] = 'Maximum input tokens allowed per calendar month. Set to 0 for unlimited.';
+$string['monthly_output_quota'] = 'Monthly output token quota';
+$string['monthly_output_quota_desc'] = 'Maximum output tokens allowed per calendar month. Set to 0 for unlimited.';
+
+$string['quota_exceeded_daily_input'] = 'Daily input token quota exceeded. Please try again tomorrow.';
+$string['quota_exceeded_daily_output'] = 'Daily output token quota exceeded. Please try again tomorrow.';
+$string['quota_exceeded_weekly_input'] = 'Weekly input token quota exceeded. Please try again next week.';
+$string['quota_exceeded_weekly_output'] = 'Weekly output token quota exceeded. Please try again next week.';
+$string['quota_exceeded_monthly_input'] = 'Monthly input token quota exceeded. Please try again next month.';
+$string['quota_exceeded_monthly_output'] = 'Monthly output token quota exceeded. Please try again next month.';
+$string['quota_usage_title'] = 'Token Quota Usage';
+$string['quota_unlimited'] = 'Unlimited (depends on your provider account)';
+
+// Freemium provider
+$string['freemium_provider_name'] = 'Freemium';
+$string['freemium_provider_desc'] = 'Built-in free AI provider (chat only). Uses a performant text model with usage quotas.';
+$string['ai_pack_required'] = 'Enable the AI pack to configure your own providers and unlock unlimited usage.';
+$string['enable_freemium'] = 'Enable Freemium provider';
+$string['enable_freemium_desc'] = 'When enabled, a built-in free AI provider (chat only) is available with usage quotas. Disable this if you only want to use your own provider instances.';
+$string['freemium_connection_heading'] = 'Freemium Connection Settings';
+$string['freemium_connection_heading_desc'] = 'Configure the API endpoint for the built-in freemium provider. These settings are only used when the freemium provider is enabled.';
+$string['freemium_api_key'] = 'Freemium API Key';
+$string['freemium_api_key_desc'] = 'The API key for the freemium AI provider.';
+$string['freemium_base_url'] = 'Freemium Base URL';
+$string['freemium_base_url_desc'] = 'The base URL for the freemium AI provider API.';
+$string['freemium_model'] = 'Freemium Model';
+$string['freemium_model_desc'] = 'The AI model to use for the freemium provider.';
+$string['freemium_not_configured'] = 'The Freemium provider is enabled but not configured. Please set the API key in the <a href="{$a}">Freemium settings</a>.';
 
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Manage Moxis AI Manager configuration';

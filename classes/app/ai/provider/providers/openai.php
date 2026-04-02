@@ -10,6 +10,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_mxaimanager\app\ai\provider\chat_completion_request;
 use local_mxaimanager\app\ai\provider\create_embedding_request;
+use local_mxaimanager\app\ai\provider\create_speech_request;
 use local_mxaimanager\app\ai\provider\create_transcription_request;
 use local_mxaimanager\app\ai\provider\image_generation_request;
 use local_mxaimanager\app\ai\provider\transcription;
@@ -18,7 +19,8 @@ use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use local_mxaimanager\app\factory as base_factory;
 
 class openai extends provider implements interfaces\chat_completion, interfaces\create_embedding,
-                                         interfaces\create_image, interfaces\create_transcription
+                                         interfaces\create_image, interfaces\create_transcription,
+                                         interfaces\create_speech
 {
     private \curl $curl;
     private string $base_url;
@@ -27,6 +29,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
     private string $embedding_model;
     private string $image_model;
     private string $transcription_model;
+    private string $tts_model;
 
     /**
      * @throws invalid_provider_instance_configuration
@@ -40,6 +43,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         $this->embedding_model = $json_config['embedding_model'] ?? '';
         $this->image_model = $json_config['image_model'] ?? '';
         $this->transcription_model = $json_config['transcription_model'] ?? '';
+        $this->tts_model = $json_config['tts_model'] ?? '';
 
         if (empty($this->base_url) || empty($this->api_key)) {
             throw new invalid_provider_instance_configuration('OpenAI is missing base url and/or api key');
@@ -52,64 +56,64 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
+    private const CHAT_MODELS = [
+        'gpt-5.4', 'gpt-5.4-pro', 'gpt-5', 'gpt-5-mini', 'gpt-5-nano',
+        'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano',
+        'gpt-4o', 'gpt-4o-mini',
+        'o3', 'o3-mini', 'o3-pro',
+    ];
+
+    private const EMBEDDING_MODELS = [
+        'text-embedding-3-large', 'text-embedding-3-small', 'text-embedding-ada-002',
+    ];
+
+    private const IMAGE_MODELS = [
+        'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini',
+        'dall-e-3', 'dall-e-2',
+    ];
+
+    private const TRANSCRIPTION_MODELS = [
+        'gpt-4o-transcribe', 'gpt-4o-mini-transcribe',
+        'gpt-4o-transcribe-diarize', 'whisper-1',
+    ];
+
+    private const TTS_MODELS = [
+        'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts',
+    ];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}chat_model",
-            get_string('default_chat_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\chat_completion::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}chat_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}chat_model", 'openai_chat_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'chat_model',
+            'default_chat_model', 'openai_chat_model',
+            interfaces\chat_completion::class, self::CHAT_MODELS);
     }
 
     private static function add_embedding_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}embedding_model",
-            get_string('default_embedding_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_embedding::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}embedding_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}embedding_model", 'openai_embedding_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'embedding_model',
+            'default_embedding_model', 'openai_embedding_model',
+            interfaces\create_embedding::class, self::EMBEDDING_MODELS);
     }
 
     private static function add_image_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}image_model",
-            get_string('default_image_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_image::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}image_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}image_model", 'openai_image_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'image_model',
+            'default_image_model', 'openai_image_model',
+            interfaces\create_image::class, self::IMAGE_MODELS);
     }
 
     private static function add_transcription_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}transcription_model",
-            get_string('default_transcription_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_transcription::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}transcription_model", PARAM_TEXT);
-        $mform->addHelpButton(
-            "{$element_name_prefix}transcription_model",
-            'openai_transcription_model',
-            'local_mxaimanager'
-        );
+        self::add_model_field($mform, $element_name_prefix, 'transcription_model',
+            'default_transcription_model', 'openai_transcription_model',
+            interfaces\create_transcription::class, self::TRANSCRIPTION_MODELS);
+    }
+
+    private static function add_tts_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
+    {
+        self::add_model_field($mform, $element_name_prefix, 'tts_model',
+            'default_tts_model', 'openai_tts_model',
+            interfaces\create_speech::class, self::TTS_MODELS);
     }
 
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void
@@ -135,6 +139,9 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
 
         // Add transcription model field
         self::add_transcription_model_field($mform, $element_name_prefix);
+
+        // Add TTS model field
+        self::add_tts_model_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array
@@ -165,6 +172,10 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
             $errors["{$element_name_prefix}transcription_model"] = get_string('required');
         }
 
+        if (empty($data["{$element_name_prefix}tts_model"])) {
+            $errors["{$element_name_prefix}tts_model"] = get_string('required');
+        }
+
         return $errors;
     }
 
@@ -185,6 +196,9 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
                 break;
             case interfaces\create_transcription::class:
                 self::add_transcription_model_field($mform, $element_name_prefix);
+                break;
+            case interfaces\create_speech::class:
+                self::add_tts_model_field($mform, $element_name_prefix);
                 break;
             default:
         }
@@ -332,6 +346,75 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(
                 'Invalid response from OpenAI: ' . $t->getMessage(),
+                previous: $t
+            );
+        }
+    }
+
+    /**
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     */
+    public function create_speech(
+        string $input,
+        string $voice = 'alloy',
+        string $response_format = 'mp3'
+    ): create_speech_request {
+        if (empty($this->tts_model)) {
+            throw new invalid_provider_instance_configuration('TTS model is not configured');
+        }
+
+        $content_type_map = [
+            'mp3' => 'audio/mpeg',
+            'opus' => 'audio/opus',
+            'aac' => 'audio/aac',
+            'flac' => 'audio/flac',
+            'wav' => 'audio/wav',
+            'pcm' => 'audio/pcm',
+        ];
+
+        $payload = [
+            'model' => $this->tts_model,
+            'input' => $input,
+            'voice' => $voice,
+            'response_format' => $response_format,
+        ];
+
+        try {
+            $response = $this->curl->post(
+                "{$this->base_url}/v1/audio/speech",
+                json_encode($payload, JSON_THROW_ON_ERROR)
+            );
+
+            if (empty($response)) {
+                throw new \Exception('Empty response from OpenAI TTS API');
+            }
+
+            // The response is raw audio binary, not JSON.
+            // Check if it looks like a JSON error response.
+            $first_char = substr($response, 0, 1);
+            if ($first_char === '{') {
+                $json = json_decode($response, true);
+                if (isset($json['error'])) {
+                    throw new \Exception('OpenAI TTS error: ' . ($json['error']['message'] ?? 'Unknown error'));
+                }
+            }
+
+            $content_type = $content_type_map[$response_format] ?? 'audio/mpeg';
+
+            // Estimate tokens: roughly 1 token per 4 characters of input.
+            $estimated_input_tokens = (int) ceil(strlen($input) / 4);
+
+            return new create_speech_request(
+                $payload,
+                $response,
+                $content_type,
+                $estimated_input_tokens,
+                0
+            );
+        } catch (\Throwable $t) {
+            throw new invalid_provider_instance_response(
+                'Invalid response from OpenAI TTS: ' . $t->getMessage(),
                 previous: $t
             );
         }

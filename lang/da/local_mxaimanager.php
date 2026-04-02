@@ -62,6 +62,7 @@ $string['uses_audio_transcriptions'] = 'Audio Transcriptions';
 
 $string['base_url'] = 'Base URL';
 $string['api_key'] = 'API Nøgle';
+$string['model_type_or_select'] = 'Select a model or type a custom one...';
 $string['default_chat_model'] = 'Standard Chat Model';
 $string['default_embedding_model'] = 'Standard Embedding Model';
 $string['default_image_model'] = 'Standard Billedmodel';

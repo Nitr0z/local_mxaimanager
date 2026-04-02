@@ -13,6 +13,7 @@ use renderable;
 use renderer_base;
 use local_mxaimanager\app\ai\feature\entity;
 use local_mxaimanager\app\factory as base_factory;
+use local_mxaimanager\app\quota_helper;
 
 class edit implements named_templatable, renderable
 {
@@ -34,10 +35,10 @@ class edit implements named_templatable, renderable
 
     public function export_for_template(renderer_base $output): array
     {
-        return [
+        return array_merge([
             'features' => true,
             'name' => get_string($this->feature->get_name_identifier(), $this->feature->get_component()),
-            'form_html' => $this->form->render()
-        ];
+            'form_html' => $this->form->render(),
+        ], quota_helper::get_quota_bars());
     }
 }

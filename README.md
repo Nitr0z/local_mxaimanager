@@ -114,6 +114,11 @@ None
 
 ## Change log
 
+* **1.0.5 (2026031600)**
+    - Model fields now use autocomplete dropdowns with known models per provider (with free-text input for custom models).
+    - Updated OpenAI models list: added gpt-5.4, gpt-5, gpt-image-1.5, gpt-4o-transcribe-diarize, etc.
+    - Updated Mistral models list: added mistral-large-3-25-12, magistral-*, devstral-*, voxtral-*, codestral-embed-25-05.
+    - Added French translation (lang/fr/local_mxaimanager.php).
 * **1.0.4 (2026011200)**
     - Added support for AI usage logging.
     - Added support for AI image generation.

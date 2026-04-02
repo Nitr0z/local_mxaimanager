@@ -12,6 +12,7 @@ use core\output\named_templatable;
 use renderable;
 use renderer_base;
 use local_mxaimanager\app\factory as base_factory;
+use local_mxaimanager\app\quota_helper;
 
 class browse implements named_templatable, renderable
 {
@@ -35,9 +36,9 @@ class browse implements named_templatable, renderable
     {
         $table = new table($this->base_factory, $this->url);
 
-        return [
+        return array_merge([
             'features' => true,
             'table_html' => $table->get_html(25),
-        ];
+        ], quota_helper::get_quota_bars());
     }
 }

@@ -22,7 +22,22 @@ class repository extends \local_mxaimanager\app\repository
     {
         global $CFG;
 
-        $preconfigured = $CFG->local_mxaimanager_preconfigured_providers ?? [];
+        $builtin = [];
+
+        // Only include freemium provider if enabled in admin settings.
+        $freemium_enabled = get_config('local_mxaimanager', 'enable_freemium');
+        if (!empty($freemium_enabled)) {
+            $builtin[] = (object)[
+                'name' => 'Freemium',
+                'classname' => \local_mxaimanager\app\ai\provider\providers\freemium::class,
+                'default_unless_explicitly_set' => true,
+                'api_key' => get_config('local_mxaimanager', 'freemium_api_key') ?: '',
+                'base_url' => get_config('local_mxaimanager', 'freemium_base_url') ?: '',
+                'chat_model' => get_config('local_mxaimanager', 'freemium_model') ?: '',
+            ];
+        }
+
+        $preconfigured = array_merge($builtin, $CFG->local_mxaimanager_preconfigured_providers ?? []);
         $entities = [];
         foreach ($preconfigured as $index => $config) {
             $record = (array) $config;

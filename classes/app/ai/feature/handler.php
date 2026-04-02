@@ -8,6 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 
 // @codeCoverageIgnoreEnd
 
+use local_mxaimanager\app\ai\provider\create_speech_request;
 use local_mxaimanager\app\ai\provider\message;
 use local_mxaimanager\app\ai\provider\create_transcription_request;
 use local_mxaimanager\app\ai\provider\transcription;
@@ -119,6 +120,35 @@ class handler
         return $this->action_handler->create_transcription(
             $this->feature,
             $audio_filepath,
+            $provider_id,
+            $config_json
+        );
+    }
+
+    /**
+     * @param string $input The text to synthesize.
+     * @param string $voice The voice to use.
+     * @param string $response_format The audio format.
+     * @return create_speech_request
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     * @throws no_provider_instance_configured
+     */
+    public function create_speech(
+        string $input,
+        string $voice = 'alloy',
+        string $response_format = 'mp3'
+    ): create_speech_request {
+        // Get provider_id and settings_json for the action.
+        [$provider_id, $config_json] = $this->provider_resolver->get_provider_and_config(
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_speech::class
+        );
+
+        return $this->action_handler->create_speech(
+            $this->feature,
+            $input,
+            $voice,
+            $response_format,
             $provider_id,
             $config_json
         );

@@ -1,3 +1,4 @@
+{{#ai_pack_owned}}
 {{^is_preconfigured}}
     <div>
         <a class="btn btn-primary" href="/local/mxaimanager/view.php?view=manage_providers&action=edit&id={{id}}"><i
@@ -9,3 +10,9 @@
 {{#is_preconfigured}}
     <p>{{#str}}this_provider_is_preconfigured_no_modify, local_mxaimanager{{/str}}</p>
 {{/is_preconfigured}}
+{{/ai_pack_owned}}
+{{^ai_pack_owned}}
+{{#is_preconfigured}}
+    <p>{{#str}}this_provider_is_preconfigured_no_modify, local_mxaimanager{{/str}}</p>
+{{/is_preconfigured}}
+{{/ai_pack_owned}}

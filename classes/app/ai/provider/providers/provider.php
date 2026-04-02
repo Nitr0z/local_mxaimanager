@@ -61,4 +61,43 @@ abstract class provider
     {
         return str_replace(' ', '_', strtolower(static::class)) . '_';
     }
+
+    /**
+     * Add a model field as an autocomplete element with known models + free-text input.
+     *
+     * @param \MoodleQuickForm $mform
+     * @param string $element_name_prefix
+     * @param string $field_key e.g. 'chat_model'
+     * @param string $label_key lang string key for the label
+     * @param string $help_key lang string key for the help button
+     * @param string $action_interface The action interface class name
+     * @param array $known_models List of known model names (values shown in dropdown)
+     */
+    protected static function add_model_field(
+        \MoodleQuickForm $mform,
+        string $element_name_prefix,
+        string $field_key,
+        string $label_key,
+        string $help_key,
+        string $action_interface,
+        array $known_models = []
+    ): void {
+        $element_name = "{$element_name_prefix}{$field_key}";
+        $options = array_combine($known_models, $known_models);
+
+        $mform->addElement(
+            'autocomplete',
+            $element_name,
+            get_string($label_key, 'local_mxaimanager'),
+            $options,
+            [
+                'tags' => true,
+                'multiple' => false,
+                'noselectionstring' => get_string('model_type_or_select', 'local_mxaimanager'),
+                'action' => $action_interface,
+            ]
+        );
+        $mform->setType($element_name, PARAM_TEXT);
+        $mform->addHelpButton($element_name, $help_key, 'local_mxaimanager');
+    }
 }

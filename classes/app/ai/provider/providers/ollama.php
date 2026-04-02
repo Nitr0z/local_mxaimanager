@@ -44,32 +44,27 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
+    private const CHAT_MODELS = [
+        'llama3.1', 'llama3', 'llama3.2', 'mistral', 'phi3', 'gemma2',
+        'codellama', 'qwen2', 'deepseek-r1',
+    ];
+
+    private const EMBEDDING_MODELS = [
+        'nomic-embed-text', 'mxbai-embed-large', 'all-minilm', 'snowflake-arctic-embed',
+    ];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}chat_model",
-            get_string('default_chat_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\chat_completion::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}chat_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}chat_model", 'ollama_chat_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'chat_model',
+            'default_chat_model', 'ollama_chat_model',
+            interfaces\chat_completion::class, self::CHAT_MODELS);
     }
 
     private static function add_embedding_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        $mform->addElement(
-            'text',
-            "{$element_name_prefix}embedding_model",
-            get_string('default_embedding_model', 'local_mxaimanager'),
-            [
-                'action' => interfaces\create_embedding::class
-            ]
-        );
-        $mform->setType("{$element_name_prefix}embedding_model", PARAM_TEXT);
-        $mform->addHelpButton("{$element_name_prefix}embedding_model", 'ollama_embedding_model', 'local_mxaimanager');
+        self::add_model_field($mform, $element_name_prefix, 'embedding_model',
+            'default_embedding_model', 'ollama_embedding_model',
+            interfaces\create_embedding::class, self::EMBEDDING_MODELS);
     }
 
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void

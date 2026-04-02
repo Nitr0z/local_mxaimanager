@@ -37,5 +37,14 @@
             {{/transcription}}
             {{#str}}supports_audio_transcriptions, local_mxaimanager{{/str}}
         </li>
+        <li>
+            {{#speech}}
+                <i class="fa fa-square-check"></i>
+            {{/speech}}
+            {{^speech}}
+                <i class="fa fa-square-o"></i>
+            {{/speech}}
+            {{#str}}supports_speech_synthesis, local_mxaimanager{{/str}}
+        </li>
     </ul>
 </div>

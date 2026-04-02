@@ -12,6 +12,7 @@ use core\output\named_templatable;
 use renderable;
 use renderer_base;
 use local_mxaimanager\app\factory as base_factory;
+use local_mxaimanager\app\quota_helper;
 
 class edit implements named_templatable, renderable
 {
@@ -31,9 +32,9 @@ class edit implements named_templatable, renderable
 
     public function export_for_template(renderer_base $output): array
     {
-        return [
+        return array_merge([
             'providers' => true,
-            'form_html' => $this->form->render()
-        ];
+            'form_html' => $this->form->render(),
+        ], quota_helper::get_quota_bars());
     }
 }

@@ -12,6 +12,7 @@ use core\output\named_templatable;
 use renderable;
 use renderer_base;
 use local_mxaimanager\app\factory as base_factory;
+use local_mxaimanager\app\quota_helper;
 
 class delete implements named_templatable, renderable
 {
@@ -33,10 +34,10 @@ class delete implements named_templatable, renderable
     {
         $provider = $this->base_factory->ai()->provider()->repository()->get_by_id($this->provider_id);
 
-        return [
+        return array_merge([
             'providers' => true,
             'id' => $this->provider_id,
             'name' => $provider->get_name(),
-        ];
+        ], quota_helper::get_quota_bars());
     }
 }

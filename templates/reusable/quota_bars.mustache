@@ -1,0 +1,35 @@
+{{#quota_unlimited}}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{{#str}}quota_usage_title, local_mxaimanager{{/str}}</h5>
+        <div class="d-flex align-items-center">
+            <i class="fa fa-infinity mr-2 text-success"></i>
+            <span class="text-success font-weight-bold">{{#str}}quota_unlimited, local_mxaimanager{{/str}}</span>
+        </div>
+    </div>
+</div>
+{{/quota_unlimited}}
+{{#has_quotas}}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{{#str}}quota_usage_title, local_mxaimanager{{/str}}</h5>
+        {{#bars}}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+                <small class="font-weight-bold">{{label}}</small>
+                <small class="text-muted">{{used}} / {{limit}}</small>
+            </div>
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar {{bar_class}}"
+                     role="progressbar"
+                     style="width: {{percent}}%"
+                     aria-valuenow="{{percent}}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+        </div>
+        {{/bars}}
+    </div>
+</div>
+{{/has_quotas}}

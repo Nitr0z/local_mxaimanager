@@ -38,5 +38,36 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
         }
     }
 
+    if ($oldversion < 2026032002) {
+        // Set default freemium quota values for existing installations.
+        $defaults = [
+            'daily_input_quota'    => 50000,
+            'daily_output_quota'   => 32000,
+            'weekly_input_quota'   => 350000,
+            'weekly_output_quota'  => 226000,
+            'monthly_input_quota'  => 1550000,
+            'monthly_output_quota' => 1000000,
+        ];
+        foreach ($defaults as $key => $value) {
+            $current = get_config('local_mxaimanager', $key);
+            if ($current === false || (int)$current === 0) {
+                set_config($key, $value, 'local_mxaimanager');
+            }
+        }
+    }
+
+    if ($oldversion < 2026032700) {
+        // Freemium credentials must be configured manually via admin settings.
+        // Set defaults for non-sensitive settings only.
+        if (get_config('local_mxaimanager', 'freemium_base_url') === false) {
+            set_config('freemium_base_url', 'https://api.scaleway.ai/v1', 'local_mxaimanager');
+        }
+        if (get_config('local_mxaimanager', 'freemium_model') === false) {
+            set_config('freemium_model', 'devstral-2-123b-instruct-2512', 'local_mxaimanager');
+        }
+
+        upgrade_plugin_savepoint(true, 2026032700, 'local', 'mxaimanager');
+    }
+
     return true;
 }

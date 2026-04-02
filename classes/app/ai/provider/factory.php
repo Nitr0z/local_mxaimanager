@@ -37,6 +37,7 @@ class factory
             \local_mxaimanager\app\ai\provider\providers\mistral::class => 'Mistral',
             \local_mxaimanager\app\ai\provider\providers\ollama::class => 'Ollama',
             \local_mxaimanager\app\ai\provider\providers\nebius::class => 'Nebius',
+            \local_mxaimanager\app\ai\provider\providers\scaleway::class => 'Scaleway',
         ];
     }
 
@@ -49,7 +50,8 @@ class factory
             \local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion::class => 'Chat',
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding::class => 'Embedding',
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_image::class => 'Image',
-            \local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription::class => 'Audio Transcription'
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription::class => 'Audio Transcription',
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_speech::class => 'Speech Synthesis'
         ];
     }
 
