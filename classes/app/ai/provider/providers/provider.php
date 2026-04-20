@@ -83,7 +83,7 @@ abstract class provider
         array $known_models = []
     ): void {
         $element_name = "{$element_name_prefix}{$field_key}";
-        $options = array_combine($known_models, $known_models);
+        $options = !empty($known_models) ? array_combine($known_models, $known_models) : [];
 
         $mform->addElement(
             'autocomplete',
