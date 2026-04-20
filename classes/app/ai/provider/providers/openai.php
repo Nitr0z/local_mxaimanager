@@ -382,7 +382,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
 
         try {
             $response = $this->curl->post(
-                "{$this->base_url}/v1/audio/speech",
+                "{$this->base_url}/audio/speech",
                 json_encode($payload, JSON_THROW_ON_ERROR)
             );
 

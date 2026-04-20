@@ -38,7 +38,8 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
         }
     }
 
-    if ($oldversion < 2026032002) {
+
+    if ($oldversion < 2026032700) {
         // Set default freemium quota values for existing installations.
         $defaults = [
             'daily_input_quota'    => 50000,
@@ -54,9 +55,7 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
                 set_config($key, $value, 'local_mxaimanager');
             }
         }
-    }
 
-    if ($oldversion < 2026032700) {
         // Freemium credentials must be configured manually via admin settings.
         // Set defaults for non-sensitive settings only.
         if (get_config('local_mxaimanager', 'freemium_base_url') === false) {
