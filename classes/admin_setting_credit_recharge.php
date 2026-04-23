@@ -99,6 +99,7 @@ class admin_setting_credit_recharge extends \admin_setting
                 : get_string('credit_enable', 'local_mxaimanager');
             $toggle_btn = "<form method='post' action='{$action_url}' style='display:inline;'>"
                 . "<input type='hidden' name='sesskey' value='{$sesskey}'/>"
+                . "<input type='hidden' name='s_local_mxaimanager_credit_recharge_ui' value='1'/>"
                 . "<input type='hidden' name='credit_toggle_id' value='{$entry->id}'/>"
                 . "<button type='submit' class='btn btn-sm {$btn_class}' title='{$btn_title}'>"
                 . "<i class='fa {$btn_icon}'></i></button></form>";
@@ -157,6 +158,7 @@ class admin_setting_credit_recharge extends \admin_setting
         $form_html = "
             <form method='post' action='{$action_url}' class='form-inline mb-3'>
                 <input type='hidden' name='sesskey' value='{$sesskey}'/>
+                <input type='hidden' name='s_local_mxaimanager_credit_recharge_ui' value='1'/>
                 <input type='hidden' name='credit_recharge_submit' value='1'/>
                 <div class='form-group mr-2'>
                     <input type='number' name='credit_recharge_amount' step='0.1' min='1'
