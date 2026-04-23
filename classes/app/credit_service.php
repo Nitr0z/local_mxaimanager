@@ -182,7 +182,7 @@ class credit_service
      */
     public static function calculate_credits(int $input_tokens, int $output_tokens, float $multiplier): float
     {
-        $tokens_per_credit = (int) get_config('local_mxaimanager', 'tokens_per_credit') ?: 10000;
+        $tokens_per_credit = (int) get_config('local_mxaimanager', 'tokens_per_credit') ?: 1000;
         $total_tokens = $input_tokens + $output_tokens;
         return round(($total_tokens * $multiplier) / $tokens_per_credit, 2);
     }

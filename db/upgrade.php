@@ -102,7 +102,7 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
             set_config('quota_display_mode', 'credits', 'local_mxaimanager');
         }
         if (get_config('local_mxaimanager', 'tokens_per_credit') === false) {
-            set_config('tokens_per_credit', 10000, 'local_mxaimanager');
+            set_config('tokens_per_credit', 1000, 'local_mxaimanager');
         }
 
         upgrade_plugin_savepoint(true, 2026042200, 'local', 'mxaimanager');

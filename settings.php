@@ -93,7 +93,7 @@ if ($hassiteconfig) {
         'local_mxaimanager/tokens_per_credit',
         get_string('tokens_per_credit', $component),
         get_string('tokens_per_credit_desc', $component),
-        10000,
+        1000,
         PARAM_INT
     ));
 
