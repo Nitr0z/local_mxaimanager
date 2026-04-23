@@ -99,6 +99,9 @@ class scaleway extends provider implements interfaces\chat_completion, interface
         self::add_chat_model_field($mform, $element_name_prefix);
         self::add_embedding_model_field($mform, $element_name_prefix);
         self::add_image_model_field($mform, $element_name_prefix);
+
+        // Add credit multiplier field.
+        self::add_credit_multiplier_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array

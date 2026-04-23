@@ -100,4 +100,27 @@ abstract class provider
         $mform->setType($element_name, PARAM_TEXT);
         $mform->addHelpButton($element_name, $help_key, 'local_mxaimanager');
     }
+
+    /**
+     * Add a credit multiplier field to the provider form.
+     * This allows admins to configure how many credits each token costs for this provider.
+     * A higher multiplier means more credits consumed per token (e.g. GPT-4 = 3.0, Scaleway = 1.0).
+     *
+     * @param \MoodleQuickForm $mform
+     * @param string $element_name_prefix
+     */
+    protected static function add_credit_multiplier_field(
+        \MoodleQuickForm $mform,
+        string $element_name_prefix
+    ): void {
+        $element_name = "{$element_name_prefix}credit_multiplier";
+        $mform->addElement(
+            'text',
+            $element_name,
+            get_string('credit_multiplier', 'local_mxaimanager')
+        );
+        $mform->setType($element_name, PARAM_FLOAT);
+        $mform->setDefault($element_name, 1.0);
+        $mform->addHelpButton($element_name, 'credit_multiplier', 'local_mxaimanager');
+    }
 }

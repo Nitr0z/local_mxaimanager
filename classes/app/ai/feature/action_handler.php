@@ -16,6 +16,7 @@ use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_speech;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription;
 use local_mxaimanager\app\ai\provider\transcription;
+use local_mxaimanager\app\credit_service;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use local_mxaimanager\app\exceptions\quota_exceeded_exception;
@@ -31,24 +32,65 @@ class action_handler
     }
 
     /**
-     * Check token quotas (daily/weekly/monthly × input/output).
-     * Quotas only apply to the built-in freemium provider (preconfigured, ID < 0).
-     * Client-configured providers are unlimited.
+     * Enforce usage limits before an AI request.
+     * Client-added providers (positive IDs, not managed) are always unlimited.
+     * Preconfigured (negative IDs) and managed providers are subject to quotas.
      *
      * @param int $provider_id The provider being used for this request.
      * @throws quota_exceeded_exception
      */
-    private function check_quotas(int $provider_id): void
+    private function enforce_quotas(int $provider_id): void
     {
-        // Quotas only apply to preconfigured providers (freemium).
-        // Client-added providers (positive IDs) are unlimited.
-        if ($provider_id > 0) {
+        // Client-added providers are unlimited unless listed as managed.
+        if ($provider_id > 0 && !self::is_managed_provider($provider_id)) {
             return;
         }
 
+        $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'credits';
+
+        if ($mode === 'credits') {
+            credit_service::check_balance();
+        } else {
+            $this->check_token_quotas();
+        }
+    }
+
+    /**
+     * Check if a provider ID is in the managed list (configured in admin settings).
+     *
+     * @param int $provider_id
+     * @return bool
+     */
+    public static function is_managed_provider(int $provider_id): bool
+    {
+        // Preconfigured providers (negative IDs) are always managed.
+        if ($provider_id < 0) {
+            return true;
+        }
+
+        $managed_ids_raw = get_config('local_mxaimanager', 'managed_provider_ids') ?: '';
+        if (empty($managed_ids_raw)) {
+            return false;
+        }
+
+        $managed_ids = array_map('intval', array_filter(
+            array_map('trim', explode(',', $managed_ids_raw)),
+            fn($v) => is_numeric($v)
+        ));
+
+        return in_array($provider_id, $managed_ids, true);
+    }
+
+    /**
+     * Check token quotas (daily/weekly/monthly × input/output).
+     * Legacy mode — used when quota_display_mode = 'tokens'.
+     *
+     * @throws quota_exceeded_exception
+     */
+    private function check_token_quotas(): void
+    {
         $now = time();
 
-        // Period definitions: config key prefix => start timestamp.
         $periods = [
             'daily' => mktime(0, 0, 0, (int)date('n', $now), (int)date('j', $now), (int)date('Y', $now)),
             'weekly' => strtotime('monday this week', $now),
@@ -59,7 +101,6 @@ class action_handler
             $input_quota = (int) get_config('local_mxaimanager', "{$period}_input_quota");
             $output_quota = (int) get_config('local_mxaimanager', "{$period}_output_quota");
 
-            // Skip this period if both are unlimited.
             if ($input_quota <= 0 && $output_quota <= 0) {
                 continue;
             }
@@ -79,6 +120,60 @@ class action_handler
                 throw new quota_exceeded_exception($period, 'output');
             }
         }
+    }
+
+    /**
+     * Get the credit multiplier for a given provider.
+     * Preconfigured providers store this in their config JSON.
+     *
+     * @param int $provider_id
+     * @return float
+     */
+    private function get_credit_multiplier(int $provider_id): float
+    {
+        try {
+            $provider = $this->base_factory->ai()->provider()->repository()->get_by_id($provider_id);
+            $config = json_decode($provider->get_config_json() ?? '{}', true) ?: [];
+            return (float)($config['credit_multiplier'] ?? 1.0);
+        } catch (\Exception $e) {
+            return 1.0;
+        }
+    }
+
+    /**
+     * Build a usage log record with credit calculation.
+     *
+     * @param int $feature_id
+     * @param int $provider_id
+     * @param array $request_json
+     * @param mixed $response_json
+     * @param int $input_tokens
+     * @param int $output_tokens
+     * @return object The inserted record data.
+     */
+    private function log_usage(
+        int $feature_id,
+        int $provider_id,
+        array $request_json,
+        mixed $response_json,
+        int $input_tokens,
+        int $output_tokens
+    ): void {
+        $multiplier = $this->get_credit_multiplier($provider_id);
+        $credits = credit_service::calculate_credits($input_tokens, $output_tokens, $multiplier);
+
+        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
+            'feature_id'    => $feature_id,
+            'provider_id'   => $provider_id,
+            'request_json'  => json_encode($request_json, JSON_THROW_ON_ERROR),
+            'response_json' => json_encode($response_json, JSON_THROW_ON_ERROR),
+            'input_tokens'  => $input_tokens,
+            'output_tokens' => $output_tokens,
+            'credits_used'  => $credits,
+            'session_id'    => session_id(),
+            'user_id'       => $this->base_factory->user()->id,
+            'timecreated'   => time(),
+        ]);
     }
 
     /**
@@ -119,7 +214,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): string {
-        $this->check_quotas($provider_id);
+        $this->enforce_quotas($provider_id);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -138,16 +233,14 @@ class action_handler
         $chat_completion_request = $handler->chat_completion($messages, $json_mode, $json_schema);
 
         // Log the request and response.
-        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($chat_completion_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($chat_completion_request->get_response_json(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $chat_completion_request->get_input_tokens(),
-            'output_tokens' => $chat_completion_request->get_output_tokens(),
-            'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
-            'timecreated' => time(),
-        ]);
+        $this->log_usage(
+            $feature->get_id(),
+            $provider_id,
+            $chat_completion_request->get_request_json(),
+            $chat_completion_request->get_response_json(),
+            $chat_completion_request->get_input_tokens(),
+            $chat_completion_request->get_output_tokens()
+        );
 
         // Return the response.
         return $chat_completion_request->get_response();
@@ -170,7 +263,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): array {
-        $this->check_quotas($provider_id);
+        $this->enforce_quotas($provider_id);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -189,16 +282,14 @@ class action_handler
         $create_embedding_request = $handler->get_embedding($input, $dimension);
 
         // Log the request and response.
-        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($create_embedding_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($create_embedding_request->get_response_json(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $create_embedding_request->get_input_tokens(),
-            'output_tokens' => $create_embedding_request->get_output_tokens(),
-            'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
-            'timecreated' => time(),
-        ]);
+        $this->log_usage(
+            $feature->get_id(),
+            $provider_id,
+            $create_embedding_request->get_request_json(),
+            $create_embedding_request->get_response_json(),
+            $create_embedding_request->get_input_tokens(),
+            $create_embedding_request->get_output_tokens()
+        );
 
         // Return the response.
         return $create_embedding_request->get_response();
@@ -221,7 +312,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): string {
-        $this->check_quotas($provider_id);
+        $this->enforce_quotas($provider_id);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -240,16 +331,14 @@ class action_handler
         $create_image_request = $handler->create_image($prompt, $return_b64);
 
         // Log the request and response.
-        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($create_image_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($create_image_request->get_response_json(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $create_image_request->get_input_tokens(),
-            'output_tokens' => $create_image_request->get_output_tokens(),
-            'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
-            'timecreated' => time(),
-        ]);
+        $this->log_usage(
+            $feature->get_id(),
+            $provider_id,
+            $create_image_request->get_request_json(),
+            $create_image_request->get_response_json(),
+            $create_image_request->get_input_tokens(),
+            $create_image_request->get_output_tokens()
+        );
 
         return $create_image_request->get_response();
     }
@@ -269,7 +358,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): transcription {
-        $this->check_quotas($provider_id);
+        $this->enforce_quotas($provider_id);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -288,16 +377,14 @@ class action_handler
         $create_transcription_request = $handler->create_transcription($audio_filepath);
 
         // Log the request and response.
-        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($create_transcription_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($create_transcription_request->get_response_json(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $create_transcription_request->get_input_tokens(),
-            'output_tokens' => $create_transcription_request->get_output_tokens(),
-            'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
-            'timecreated' => time(),
-        ]);
+        $this->log_usage(
+            $feature->get_id(),
+            $provider_id,
+            $create_transcription_request->get_request_json(),
+            $create_transcription_request->get_response_json(),
+            $create_transcription_request->get_input_tokens(),
+            $create_transcription_request->get_output_tokens()
+        );
 
         return $create_transcription_request->get_response();
     }
@@ -321,7 +408,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): create_speech_request {
-        $this->check_quotas($provider_id);
+        $this->enforce_quotas($provider_id);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -340,16 +427,14 @@ class action_handler
         $create_speech_request = $handler->create_speech($input, $voice, $response_format);
 
         // Log the request and response.
-        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($create_speech_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($create_speech_request->jsonSerialize(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $create_speech_request->get_input_tokens(),
-            'output_tokens' => $create_speech_request->get_output_tokens(),
-            'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
-            'timecreated' => time(),
-        ]);
+        $this->log_usage(
+            $feature->get_id(),
+            $provider_id,
+            $create_speech_request->get_request_json(),
+            $create_speech_request->jsonSerialize(),
+            $create_speech_request->get_input_tokens(),
+            $create_speech_request->get_output_tokens()
+        );
 
         return $create_speech_request;
     }

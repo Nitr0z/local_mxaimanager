@@ -38,6 +38,6 @@ class delete implements named_templatable, renderable
             'providers' => true,
             'id' => $this->provider_id,
             'name' => $provider->get_name(),
-        ], quota_helper::get_quota_bars());
+        ], quota_helper::get_display_data());
     }
 }

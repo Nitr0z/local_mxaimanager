@@ -84,6 +84,9 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
 
         // Add embedding model field
         self::add_embedding_model_field($mform, $element_name_prefix);
+
+        // Add credit multiplier field.
+        self::add_credit_multiplier_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array

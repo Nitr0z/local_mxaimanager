@@ -39,6 +39,6 @@ class edit implements named_templatable, renderable
             'features' => true,
             'name' => get_string($this->feature->get_name_identifier(), $this->feature->get_component()),
             'form_html' => $this->form->render(),
-        ], quota_helper::get_quota_bars());
+        ], quota_helper::get_display_data());
     }
 }

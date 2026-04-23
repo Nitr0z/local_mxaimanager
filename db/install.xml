@@ -90,6 +90,8 @@
                 <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID of the record"/>
                 <FIELD NAME="feature_id" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"
                        COMMENT="ID of the feature"/>
+                <FIELD NAME="provider_id" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"
+                       COMMENT="ID of the AI provider used"/>
                 <FIELD NAME="request_json" SEQUENCE="false" TYPE="text" NOTNULL="true"
                        COMMENT="JSON request sent to the AI provider"/>
                 <FIELD NAME="response_json" SEQUENCE="false" TYPE="text" NOTNULL="true"
@@ -98,6 +100,8 @@
                        COMMENT="Number of input tokens used"/>
                 <FIELD NAME="output_tokens" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"
                        COMMENT="Number of output tokens generated"/>
+                <FIELD NAME="credits_used" SEQUENCE="false" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0"
+                       COMMENT="Credits consumed by this request"/>
                 <FIELD NAME="session_id" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"
                        COMMENT="Session identifier for grouping related requests"/>
                 <FIELD NAME="user_id" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"
@@ -114,6 +118,28 @@
                 <INDEX NAME="session_id" UNIQUE="false" FIELDS="session_id"/>
                 <INDEX NAME="user_id" UNIQUE="false" FIELDS="user_id"/>
             </INDEXES>
+        </TABLE>
+        <TABLE NAME="local_mxaimanager_credit_ledger" COMMENT="Credit wallet ledger for tracking purchases and recharges">
+            <FIELDS>
+                <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID of the record"/>
+                <FIELD NAME="amount" SEQUENCE="false" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true"
+                       COMMENT="Number of credits added"/>
+                <FIELD NAME="type" SEQUENCE="false" TYPE="char" LENGTH="20" NOTNULL="true"
+                       COMMENT="Type: initial, recharge, adjustment"/>
+                <FIELD NAME="note" SEQUENCE="false" TYPE="text" NOTNULL="false"
+                       COMMENT="Free-text note (e.g. invoice reference)"/>
+                <FIELD NAME="created_by" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"
+                       COMMENT="ID of the admin who performed the recharge"/>
+                <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"
+                       COMMENT="Timestamp when the entry was created"/>
+                <FIELD NAME="expires_at" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"
+                       COMMENT="Optional expiry timestamp for these credits"/>
+                <FIELD NAME="active" SEQUENCE="false" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"
+                       COMMENT="Whether this allocation is active (1) or disabled (0)"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
         </TABLE>
     </TABLES>
 </XMLDB>

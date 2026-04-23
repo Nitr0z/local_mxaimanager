@@ -2,10 +2,8 @@
 
 namespace local_mxaimanager\output\manage;
 
-
 // @codeCoverageIgnoreStart
 defined('MOODLE_INTERNAL') || die();
-
 // @codeCoverageIgnoreEnd
 
 use core\output\named_templatable;
@@ -38,6 +36,9 @@ class index implements named_templatable, renderable
         $freemium_api_key = get_config('local_mxaimanager', 'freemium_api_key');
         $freemium_not_configured = $freemium_enabled && empty($freemium_api_key);
 
+        // Get display data based on configured quota mode (read-only for clients).
+        $quota_data = quota_helper::get_display_data();
+
         return array_merge([
             'general' => true,
             'no_providers' => $no_providers,
@@ -46,6 +47,6 @@ class index implements named_templatable, renderable
             'freemium_settings_url' => (new \moodle_url('/admin/settings.php', [
                 'section' => 'local_mxaimanager_freemium'
             ]))->out(false),
-        ], quota_helper::get_quota_bars());
+        ], $quota_data);
     }
 }

@@ -141,6 +141,43 @@ $string['freemium_model'] = 'Freemium Model';
 $string['freemium_model_desc'] = 'The AI model to use for the freemium provider.';
 $string['freemium_not_configured'] = 'The Freemium provider is enabled but not configured. Please set the API key in the <a href="{$a}">Freemium settings</a>.';
 
+// Credit System
+$string['credit_heading'] = 'AI Credit Settings';
+$string['credit_heading_desc'] = 'Credits provide a simple way to track AI usage. Each AI action consumes credits based on the tokens used and the provider cost multiplier. Credits are purchased as a prepaid balance.';
+$string['quota_display_mode'] = 'Quota display mode';
+$string['quota_display_mode_desc'] = 'Choose how usage limits are displayed: as user-friendly credits or as raw token counts (advanced).';
+$string['mode_credits'] = 'Credits';
+$string['mode_tokens'] = 'Tokens (advanced)';
+$string['tokens_per_credit'] = 'Tokens per credit';
+$string['tokens_per_credit_desc'] = 'Number of tokens (input + output combined) that equal 1 credit at base rate (multiplier 1.0). Lower values make credits more granular.';
+$string['managed_provider_ids'] = 'Managed provider IDs';
+$string['managed_provider_ids_desc'] = 'Comma-separated list of provider IDs that are managed by you (e.g. "1,3,5"). These providers will be subject to credit/token limits and cannot be edited or deleted by the client.';
+$string['credit_multiplier'] = 'Credit cost multiplier';
+$string['credit_multiplier_help'] = 'Multiplier applied to token consumption for credit calculation. More expensive providers should have a higher multiplier. For example: 1.0 for Scaleway (base rate), 3.0 for GPT-4 (3x more expensive), 0.0 for self-hosted Ollama (free).';
+$string['credit_usage_title'] = 'AI Credits';
+$string['credits_remaining'] = 'credits remaining';
+$string['credit_expired'] = 'Credits have expired. Please contact your administrator to renew.';
+$string['credit_expires_on'] = 'Expires on:';
+$string['credit_recharge'] = 'Recharge';
+$string['credit_recharge_amount'] = 'Credits';
+$string['credit_recharge_note'] = 'Note (e.g. Invoice #123)';
+$string['credit_recharged'] = 'Credits successfully recharged.';
+$string['credit_recharge_heading'] = 'Credit balance & Recharge';
+$string['credit_recharge_expiry'] = 'Expiry date (optional)';
+$string['credit_history_expiry'] = 'Expires';
+$string['credit_history_date'] = 'Date';
+$string['credit_history_amount'] = 'Credits';
+$string['credit_history_type'] = 'Type';
+$string['credit_history_note'] = 'Note';
+$string['credit_type_initial'] = 'Initial allocation';
+$string['credit_type_recharge'] = 'Recharge';
+$string['credit_type_adjustment'] = 'Adjustment';
+$string['quota_exceeded_depleted_credits'] = 'Your AI credit balance has been depleted. Please contact your administrator to recharge credits.';
+$string['quota_exceeded_expired_credits'] = 'Your AI credits have expired. Please contact your administrator to renew your credit allocation.';
+$string['credit_empty_info'] = 'No credits have been allocated yet. Use the form below to add your initial credit balance.';
+$string['credit_disable'] = 'Disable this credit allocation';
+$string['credit_enable'] = 'Re-enable this credit allocation';
+
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Manage Moxis AI Manager configuration';
 
@@ -155,3 +192,4 @@ $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:output_tok
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:session_id'] = 'The session ID associated with the request.';
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:user_id'] = 'The ID of the user who made the request.';
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:timecreated'] = 'The timestamp when the log entry was created.';
+

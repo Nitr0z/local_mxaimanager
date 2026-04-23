@@ -7,41 +7,99 @@ defined('MOODLE_INTERNAL') || die();
 // @codeCoverageIgnoreEnd
 
 /**
- * Provides quota usage data for display in manage page templates.
+ * Provides quota/credit usage data for display in manage page templates.
  */
 class quota_helper
 {
     /**
-     * Check if the current default chat provider is the built-in freemium (preconfigured, negative ID).
+     * Check if the current default chat provider is preconfigured (negative ID = our accounts).
      */
-    private static function is_using_freemium(): bool
+    private static function is_using_preconfigured(): bool
     {
-        // If freemium is disabled entirely, it cannot be in use.
-        if (empty(get_config('local_mxaimanager', 'enable_freemium'))) {
-            return false;
-        }
-
+        // If freemium is disabled entirely, check if any default is preconfigured.
         try {
             $factory = \local_mxaimanager\app\factory::make();
             $chat_interface = \local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion::class;
             $default = $factory->ai()->default_provider()->repository()->get_by_action_interface($chat_interface);
             return $default->get_provider_id() < 0;
         } catch (\Exception $e) {
-            // No default set — freemium is enabled, so it acts as fallback.
-            return true;
+            // No default set — check if freemium is enabled (it acts as fallback).
+            return !empty(get_config('local_mxaimanager', 'enable_freemium'));
         }
     }
 
     /**
-     * Returns quota bar data for all configured quotas (daily/weekly/monthly × input/output).
-     * If the default provider is not freemium, returns an "unlimited" state instead.
+     * Returns the appropriate display data based on the configured quota mode.
+     *
+     * @return array Template data for quota display.
+     */
+    public static function get_display_data(): array
+    {
+        $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'credits';
+
+        if ($mode === 'credits') {
+            return self::get_credit_bar();
+        }
+        return self::get_quota_bars();
+    }
+
+    /**
+     * Returns credit wallet bar data.
+     * Always shown for admins regardless of provider type.
+     * Enforcement is handled separately in action_handler::enforce_quotas().
+     *
+     * @return array{has_credits: bool, ...}
+     */
+    public static function get_credit_bar(): array
+    {
+
+        $total = credit_service::get_total_allocated();
+        if ($total <= 0) {
+            // No credits allocated yet — show empty state with recharge form.
+            return [
+                'has_credits'       => true,
+                'credit_balance'    => '0.0',
+                'credit_total'      => '0.0',
+                'credit_used'       => '0.0',
+                'credit_percent'    => 0,
+                'credit_bar_class'  => 'bg-secondary',
+                'credit_expired'    => false,
+                'credit_expiry'     => '',
+                'has_expiry'        => false,
+                'credit_empty'      => true,
+            ];
+        }
+
+        $balance = credit_service::get_balance();
+        $used = round($total - $balance, 1);
+        $pct = min(100, round(($used / $total) * 100));
+        $expired = credit_service::is_expired();
+
+        $nearest_expiry = credit_service::get_nearest_expiry();
+
+        return [
+            'has_credits'       => true,
+            'credit_balance'    => number_format($balance, 1),
+            'credit_total'      => number_format($total, 1),
+            'credit_used'       => number_format($used, 1),
+            'credit_percent'    => $pct,
+            'credit_bar_class'  => $expired ? 'bg-secondary' : self::bar_class($pct),
+            'credit_expired'    => $expired,
+            'credit_expiry'     => $nearest_expiry ? userdate($nearest_expiry, '%d/%m/%Y') : '',
+            'has_expiry'        => $nearest_expiry !== null,
+        ];
+    }
+
+    /**
+     * Returns token quota bar data for all configured quotas (daily/weekly/monthly × input/output).
+     * Used when quota_display_mode = 'tokens'.
      *
      * @return array{has_quotas: bool, quota_unlimited: bool, bars: array}
      */
     public static function get_quota_bars(): array
     {
         // If client uses their own provider, show unlimited.
-        if (!self::is_using_freemium()) {
+        if (!self::is_using_preconfigured()) {
             return [
                 'has_quotas' => false,
                 'quota_unlimited' => true,

@@ -39,6 +39,6 @@ class browse implements named_templatable, renderable
         return array_merge([
             'features' => true,
             'table_html' => $table->get_html(25),
-        ], quota_helper::get_quota_bars());
+        ], quota_helper::get_display_data());
     }
 }

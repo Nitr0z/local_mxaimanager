@@ -1,3 +1,56 @@
+{{!
+    Credit wallet bar — displayed when quota_display_mode = 'credits'
+    Read-only display for clients. Recharge is done via admin settings page.
+}}
+{{#has_credits}}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="fa fa-coins mr-2"></i>
+            {{#str}}credit_usage_title, local_mxaimanager{{/str}}
+        </h5>
+        {{#credit_empty}}
+        <div class="alert alert-info mb-2">
+            <i class="fa fa-info-circle mr-1"></i>
+            {{#str}}credit_empty_info, local_mxaimanager{{/str}}
+        </div>
+        {{/credit_empty}}
+        {{^credit_empty}}
+        <div class="d-flex justify-content-between mb-1">
+            <span class="font-weight-bold">
+                {{credit_balance}} {{#str}}credits_remaining, local_mxaimanager{{/str}}
+            </span>
+            <small class="text-muted">{{credit_used}} / {{credit_total}}</small>
+        </div>
+        <div class="progress mb-2" style="height: 12px;">
+            <div class="progress-bar {{credit_bar_class}}"
+                 role="progressbar"
+                 style="width: {{credit_percent}}%"
+                 aria-valuenow="{{credit_percent}}"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+        </div>
+        {{#has_expiry}}
+        <small class="text-muted">
+            {{#credit_expired}}
+                <i class="fa fa-exclamation-triangle text-danger mr-1"></i>
+                {{#str}}credit_expired, local_mxaimanager{{/str}}
+            {{/credit_expired}}
+            {{^credit_expired}}
+                <i class="fa fa-calendar mr-1"></i>
+                {{#str}}credit_expires_on, local_mxaimanager{{/str}} {{credit_expiry}}
+            {{/credit_expired}}
+        </small>
+        {{/has_expiry}}
+        {{/credit_empty}}
+    </div>
+</div>
+{{/has_credits}}
+
+{{!
+    Token quota bars — displayed when quota_display_mode = 'tokens'
+}}
 {{#quota_unlimited}}
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-body">

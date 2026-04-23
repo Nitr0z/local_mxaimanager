@@ -35,6 +35,6 @@ class add implements named_templatable, renderable
         return array_merge([
             'providers' => true,
             'form_html' => $this->form->render(),
-        ], quota_helper::get_quota_bars());
+        ], quota_helper::get_display_data());
     }
 }

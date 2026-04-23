@@ -40,10 +40,18 @@ $string['openai_image_model'] = 'OpenAI Image Model';
 $string['openai_image_model_help'] = 'Her kan du angive den billedgenereringsmodel, der skal bruges. For eksempel: <strong>dall-e-3</strong>, <strong>dall-e-2</strong>, osv. Se OpenAI\'s dokumentation for tilgængelige billedgenereringsmodeller.';
 $string['nebius_image_model'] = 'Nebius Image Model';
 $string['nebius_image_model_help'] = 'Her kan du angive den billedgenereringsmodel, der skal bruges. For eksempel: <strong>black-forest-labs/flux-dev</strong>. Se Nebius\'s dokumentation for tilgængelige billedgenereringsmodeller.';
+$string['scaleway_chat_model'] = 'Scaleway Chat Model';
+$string['scaleway_chat_model_help'] = 'Her kan du angive den chat-model, der skal bruges. For eksempel: <strong>llama-3.1-8b-instruct</strong>. Se Scaleway\'s dokumentation for tilgængelige modeller.';
+$string['scaleway_embedding_model'] = 'Scaleway Embedding Model';
+$string['scaleway_embedding_model_help'] = 'Her kan du angive den embedding-model, der skal bruges. Se Scaleway\'s dokumentation for tilgængelige embedding-modeller.';
+$string['scaleway_image_model'] = 'Scaleway Image Model';
+$string['scaleway_image_model_help'] = 'Her kan du angive den billedgenereringsmodel, der skal bruges. Se Scaleway\'s dokumentation for tilgængelige billedgenereringsmodeller.';
 $string['openai_transcription_model'] = 'OpenAI Transcription Model';
-$string['openai_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>whisper-1</strong>. Refer to OpenAI\'s documentation for available transcription models.';
+$string['openai_transcription_model_help'] = 'Her kan du angive den transskriptionsmodel, der skal bruges. For eksempel: <strong>whisper-1</strong>. Se OpenAI\'s dokumentation for tilgængelige transskriptionsmodeller.';
 $string['mistral_transcription_model'] = 'Mistral Transcription Model';
-$string['mistral_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>mistral-whisper</strong>. Refer to Mistral\'s documentation for available transcription models.';
+$string['mistral_transcription_model_help'] = 'Her kan du angive den transskriptionsmodel, der skal bruges. For eksempel: <strong>mistral-whisper</strong>. Se Mistral\'s dokumentation for tilgængelige transskriptionsmodeller.';
+$string['openai_tts_model'] = 'OpenAI Text-to-Speech Model';
+$string['openai_tts_model_help'] = 'Her kan du angive den text-to-speech-model, der skal bruges. For eksempel: <strong>tts-1</strong>, <strong>tts-1-hd</strong>. Se OpenAI\'s dokumentation for tilgængelige TTS-modeller.';
 
 // Manage Features
 $string['manage_features:title'] = 'AI Funktioner';
@@ -59,7 +67,7 @@ $string['uses_chat'] = 'Chat';
 $string['uses_embedding'] = 'Embeddings';
 $string['uses_image'] = 'Image';
 $string['uses_audio_transcriptions'] = 'Audio Transcriptions';
-
+$string['uses_speech_synthesis'] = 'Talesyntese';
 $string['base_url'] = 'Base URL';
 $string['api_key'] = 'API Nøgle';
 $string['model_type_or_select'] = 'Vælg en model eller skriv din egen...';
@@ -67,11 +75,13 @@ $string['default_chat_model'] = 'Standard Chat Model';
 $string['default_embedding_model'] = 'Standard Embedding Model';
 $string['default_image_model'] = 'Standard Billedmodel';
 $string['default_transcription_model'] = 'Standard Transkriptionsmodel';
+$string['default_tts_model'] = 'Standard Text-to-Speech Model';
 $string['provider_settings'] = 'Provider Indstillinger';
 $string['supports_chat'] = 'Understøtter Chat';
 $string['supports_embedding'] = 'Understøtter Embedding';
 $string['supports_image'] = 'Understøtter Billede';
 $string['supports_audio_transcriptions'] = 'Understøtter Audio Transkriptioner';
+$string['supports_speech_synthesis'] = 'Understøtter Talesyntese';
 $string['provider_supports'] = 'Provider Kapaciteter';
 $string['default_action_providers'] = 'Standard Handling Provider-instanser';
 $string['here_you_define_default_action_providers'] = 'Her definerer du, hvilke provider-instanser der skal bruges som standard for hver handling.';
@@ -83,6 +93,89 @@ $string['this_provider_is_preconfigured_no_modify'] = 'Denne provider instans er
 
 // Settings
 $string['settings:manage_page'] = 'Administrer AI Indstillinger';
+$string['settings:quota_page'] = 'Token Kvote';
+$string['settings:freemium_page'] = 'Freemium Provider';
+
+// Global Token Quota
+$string['quota_heading'] = 'Freemium Token Kvoter';
+$string['quota_heading_desc'] = 'Disse kvoter gælder kun for den indbyggede Freemium-provider. Brugerdefinerede provider-instanser (OpenAI, Mistral, osv.) er ubegrænsede. Sæt til 0 for ubegrænset.';
+
+$string['daily_input_quota'] = 'Daglig input token-kvote';
+$string['daily_input_quota_desc'] = 'Maksimalt antal input tokens tilladt pr. dag. Sæt til 0 for ubegrænset.';
+$string['daily_output_quota'] = 'Daglig output token-kvote';
+$string['daily_output_quota_desc'] = 'Maksimalt antal output tokens tilladt pr. dag. Sæt til 0 for ubegrænset.';
+
+$string['weekly_input_quota'] = 'Ugentlig input token-kvote';
+$string['weekly_input_quota_desc'] = 'Maksimalt antal input tokens tilladt pr. uge (nulstilles mandag). Sæt til 0 for ubegrænset.';
+$string['weekly_output_quota'] = 'Ugentlig output token-kvote';
+$string['weekly_output_quota_desc'] = 'Maksimalt antal output tokens tilladt pr. uge (nulstilles mandag). Sæt til 0 for ubegrænset.';
+
+$string['monthly_input_quota'] = 'Månedlig input token-kvote';
+$string['monthly_input_quota_desc'] = 'Maksimalt antal input tokens tilladt pr. kalendermåned. Sæt til 0 for ubegrænset.';
+$string['monthly_output_quota'] = 'Månedlig output token-kvote';
+$string['monthly_output_quota_desc'] = 'Maksimalt antal output tokens tilladt pr. kalendermåned. Sæt til 0 for ubegrænset.';
+
+$string['quota_exceeded_daily_input'] = 'Daglig input token-kvote overskredet. Prøv igen i morgen.';
+$string['quota_exceeded_daily_output'] = 'Daglig output token-kvote overskredet. Prøv igen i morgen.';
+$string['quota_exceeded_weekly_input'] = 'Ugentlig input token-kvote overskredet. Prøv igen næste uge.';
+$string['quota_exceeded_weekly_output'] = 'Ugentlig output token-kvote overskredet. Prøv igen næste uge.';
+$string['quota_exceeded_monthly_input'] = 'Månedlig input token-kvote overskredet. Prøv igen næste måned.';
+$string['quota_exceeded_monthly_output'] = 'Månedlig output token-kvote overskredet. Prøv igen næste måned.';
+$string['quota_usage_title'] = 'Token Kvote Forbrug';
+$string['quota_unlimited'] = 'Ubegrænset (baseret på din provider-konto)';
+
+// Freemium provider
+$string['freemium_provider_name'] = 'Freemium';
+$string['freemium_provider_desc'] = 'Indbygget gratis AI-provider (kun chat). Bruger en effektiv tekstmodel med forbrugskvoter.';
+$string['ai_pack_required'] = 'Aktiver AI-pakken for at konfigurere dine egne providere og låse op for ubegrænset brug.';
+$string['enable_freemium'] = 'Aktiver Freemium provider';
+$string['enable_freemium_desc'] = 'Når aktiveret, er en indbygget gratis AI-provider (kun chat) tilgængelig med forbrugskvoter. Deaktiver dette, hvis du kun vil bruge dine egne provider-instanser.';
+$string['freemium_connection_heading'] = 'Freemium Forbindelsesindstillinger';
+$string['freemium_connection_heading_desc'] = 'Konfigurer API-endepunktet for den indbyggede Freemium-provider. Disse indstillinger bruges kun, når Freemium-provideren er aktiveret.';
+$string['freemium_api_key'] = 'Freemium API Nøgle';
+$string['freemium_api_key_desc'] = 'API-nøglen til Freemium AI-provideren.';
+$string['freemium_base_url'] = 'Freemium Base URL';
+$string['freemium_base_url_desc'] = 'Base URL for Freemium AI-providerens API.';
+$string['freemium_model'] = 'Freemium Model';
+$string['freemium_model_desc'] = 'AI-modellen til Freemium-provideren.';
+$string['freemium_not_configured'] = 'Freemium-provideren er aktiveret men ikke konfigureret. Angiv venligst API-nøglen i <a href="{$a}">Freemium-indstillingerne</a>.';
+
+// Credit System
+$string['credit_heading'] = 'AI Kredit Indstillinger';
+$string['credit_heading_desc'] = 'Kreditter giver en enkel måde at spore AI-forbrug. Hver AI-handling forbruger kreditter baseret på tokens brugt og providerens omkostningsmultiplikator. Kreditter købes som forudbetalt saldo.';
+$string['quota_display_mode'] = 'Kvotevisningstilstand';
+$string['quota_display_mode_desc'] = 'Vælg hvordan forbrugsgrænser vises: som brugervenlige kreditter eller som rå token-antal (avanceret).';
+$string['mode_credits'] = 'Kreditter';
+$string['mode_tokens'] = 'Tokens (avanceret)';
+$string['tokens_per_credit'] = 'Tokens pr. kredit';
+$string['tokens_per_credit_desc'] = 'Antal tokens (input + output kombineret) der svarer til 1 kredit ved basistakst (multiplikator 1.0). Lavere værdier gør kreditter mere granulære.';
+$string['managed_provider_ids'] = 'Administrerede provider-ID\'er';
+$string['managed_provider_ids_desc'] = 'Kommasepareret liste over provider-ID\'er administreret af dig (f.eks. "1,3,5"). Disse providere vil være underlagt kredit-/tokengrænser og kan ikke redigeres eller slettes af klienten.';
+$string['credit_multiplier'] = 'Kredit omkostningsmultiplikator';
+$string['credit_multiplier_help'] = 'Multiplikator anvendt på tokenforbrug til kreditberegning. Dyrere providere bør have en højere multiplikator. F.eks.: 1.0 for Scaleway (basistakst), 3.0 for GPT-4 (3x dyrere), 0.0 for selvhostet Ollama (gratis).';
+$string['credit_usage_title'] = 'AI Kreditter';
+$string['credits_remaining'] = 'kreditter tilbage';
+$string['credit_expired'] = 'Kreditterne er udløbet. Kontakt venligst din administrator for fornyelse.';
+$string['credit_expires_on'] = 'Udløber den:';
+$string['credit_recharge'] = 'Genoplad';
+$string['credit_recharge_amount'] = 'Kreditter';
+$string['credit_recharge_note'] = 'Note (f.eks. Faktura #123)';
+$string['credit_recharged'] = 'Kreditter genopladt med succes.';
+$string['credit_recharge_heading'] = 'Kreditsaldo & Genopladning';
+$string['credit_recharge_expiry'] = 'Udløbsdato (valgfri)';
+$string['credit_history_expiry'] = 'Udløber';
+$string['credit_history_date'] = 'Dato';
+$string['credit_history_amount'] = 'Kreditter';
+$string['credit_history_type'] = 'Type';
+$string['credit_history_note'] = 'Note';
+$string['credit_type_initial'] = 'Indledende tildeling';
+$string['credit_type_recharge'] = 'Genopladning';
+$string['credit_type_adjustment'] = 'Justering';
+$string['quota_exceeded_depleted_credits'] = 'Din AI-kreditsaldo er opbrugt. Kontakt venligst din administrator for at genoplade kreditter.';
+$string['quota_exceeded_expired_credits'] = 'Dine AI-kreditter er udløbet. Kontakt venligst din administrator for at forny din kredittildeling.';
+$string['credit_empty_info'] = 'Der er endnu ikke tildelt nogen kreditter. Brug formularen nedenfor til at tilføje din indledende kreditsaldo.';
+$string['credit_disable'] = 'Deaktiver denne kredittildeling';
+$string['credit_enable'] = 'Genaktiver denne kredittildeling';
 
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Manage Moxis AI Manager configuration';

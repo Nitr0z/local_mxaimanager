@@ -47,6 +47,6 @@ class browse implements named_templatable, renderable
             'ai_pack_owned' => $this->ai_pack_owned,
             'table_html' => $table->get_html(25),
             'default_provider_form_html' => $this->default_provider_form->render(),
-        ], quota_helper::get_quota_bars());
+        ], quota_helper::get_display_data());
     }
 }

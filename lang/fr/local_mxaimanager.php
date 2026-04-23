@@ -141,6 +141,43 @@ $string['freemium_model'] = 'Modèle Freemium';
 $string['freemium_model_desc'] = 'Le modèle IA à utiliser pour le fournisseur freemium.';
 $string['freemium_not_configured'] = 'Le fournisseur Freemium est activé mais non configuré. Veuillez définir la clé API dans les <a href="{$a}">paramètres Freemium</a>.';
 
+// Système de crédits
+$string['credit_heading'] = 'Paramètres des crédits IA';
+$string['credit_heading_desc'] = 'Les crédits offrent un moyen simple de suivre l\'utilisation de l\'IA. Chaque action IA consomme des crédits en fonction des tokens utilisés et du multiplicateur de coût du fournisseur. Les crédits sont achetés en tant que solde prépayé.';
+$string['quota_display_mode'] = 'Mode d\'affichage des quotas';
+$string['quota_display_mode_desc'] = 'Choisissez l\'affichage des limites d\'utilisation : crédits (simplifié) ou tokens (avancé).';
+$string['mode_credits'] = 'Crédits';
+$string['mode_tokens'] = 'Tokens (avancé)';
+$string['tokens_per_credit'] = 'Tokens par crédit';
+$string['tokens_per_credit_desc'] = 'Nombre de tokens (entrée + sortie combinés) pour 1 crédit au taux de base (multiplicateur 1.0). Des valeurs plus basses rendent les crédits plus granulaires.';
+$string['managed_provider_ids'] = 'IDs des providers gérés';
+$string['managed_provider_ids_desc'] = 'Liste d\'IDs de providers séparés par des virgules (ex : "1,3,5"). Ces providers seront soumis aux limites de crédits/tokens et ne pourront pas être modifiés ou supprimés par le client.';
+$string['credit_multiplier'] = 'Multiplicateur de coût crédit';
+$string['credit_multiplier_help'] = 'Multiplicateur appliqué à la consommation de tokens pour le calcul des crédits. Les fournisseurs plus chers doivent avoir un multiplicateur plus élevé. Par exemple : 1.0 pour Scaleway (taux de base), 3.0 pour GPT-4 (3x plus cher), 0.0 pour Ollama auto-hébergé (gratuit).';
+$string['credit_usage_title'] = 'Crédits IA';
+$string['credits_remaining'] = 'crédits restants';
+$string['credit_expired'] = 'Les crédits ont expiré. Veuillez contacter votre administrateur pour renouveler.';
+$string['credit_expires_on'] = 'Expire le :';
+$string['credit_recharge'] = 'Recharger';
+$string['credit_recharge_amount'] = 'Crédits';
+$string['credit_recharge_note'] = 'Note (ex : Facture #123)';
+$string['credit_recharged'] = 'Crédits rechargés avec succès.';
+$string['credit_recharge_heading'] = 'Solde de crédits & Recharge';
+$string['credit_recharge_expiry'] = 'Date d\'expiration (optionnel)';
+$string['credit_history_expiry'] = 'Expire le';
+$string['credit_history_date'] = 'Date';
+$string['credit_history_amount'] = 'Crédits';
+$string['credit_history_type'] = 'Type';
+$string['credit_history_note'] = 'Note';
+$string['credit_type_initial'] = 'Allocation initiale';
+$string['credit_type_recharge'] = 'Recharge';
+$string['credit_type_adjustment'] = 'Ajustement';
+$string['quota_exceeded_depleted_credits'] = 'Votre solde de crédits IA est épuisé. Veuillez contacter votre administrateur pour recharger vos crédits.';
+$string['quota_exceeded_expired_credits'] = 'Vos crédits IA ont expiré. Veuillez contacter votre administrateur pour renouveler votre allocation de crédits.';
+$string['credit_empty_info'] = 'Aucun crédit n\'a encore été alloué. Utilisez le formulaire ci-dessous pour ajouter votre solde initial de crédits.';
+$string['credit_disable'] = 'Désactiver cette allocation de crédits';
+$string['credit_enable'] = 'Réactiver cette allocation de crédits';
+
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Gérer la configuration de Moxis AI Manager';
 
@@ -155,3 +192,4 @@ $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:output_tok
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:session_id'] = 'L\'ID de session associé à la requête.';
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:user_id'] = 'L\'ID de l\'utilisateur ayant effectué la requête.';
 $string['privacy:metadata:local_mxaimanager_feature_action_usage_logs:timecreated'] = 'L\'horodatage de création de l\'entrée de log.';
+
