@@ -33,16 +33,16 @@ class action_handler
 
     /**
      * Enforce usage limits before an AI request.
-     * Client-added providers (positive IDs, not managed) are always unlimited.
-     * Preconfigured (negative IDs) and managed providers are subject to quotas.
+     * Non-managed providers are unlimited.
+     * Managed providers (listed in managed_provider_ids) are subject to quotas.
      *
      * @param int $provider_id The provider being used for this request.
      * @throws quota_exceeded_exception
      */
     private function enforce_quotas(int $provider_id): void
     {
-        // Client-added providers are unlimited unless listed as managed.
-        if ($provider_id > 0 && !self::is_managed_provider($provider_id)) {
+        // Only managed providers are subject to quotas.
+        if (!self::is_managed_provider($provider_id)) {
             return;
         }
 
@@ -63,11 +63,6 @@ class action_handler
      */
     public static function is_managed_provider(int $provider_id): bool
     {
-        // Preconfigured providers (negative IDs) are always managed.
-        if ($provider_id < 0) {
-            return true;
-        }
-
         $managed_ids_raw = get_config('local_mxaimanager', 'managed_provider_ids') ?: '';
         if (empty($managed_ids_raw)) {
             return false;
@@ -124,7 +119,7 @@ class action_handler
 
     /**
      * Get the credit multiplier for a given provider.
-     * Preconfigured providers store this in their config JSON.
+     * Providers store this in their config JSON.
      *
      * @param int $provider_id
      * @return float

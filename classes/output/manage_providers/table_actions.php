@@ -22,10 +22,10 @@ class table_actions implements \renderable, \core\output\named_templatable
 
     public function export_for_template(renderer_base $output): array
     {
-        $is_preconfigured = \local_mxaimanager\app\ai\feature\action_handler::is_managed_provider($this->id);
+        $is_managed = \local_mxaimanager\app\ai\feature\action_handler::is_managed_provider($this->id);
         return [
             'id' => $this->id,
-            'is_preconfigured' => $is_preconfigured,
+            'is_managed' => $is_managed,
             'ai_pack_owned' => $this->ai_pack_owned,
         ];
     }

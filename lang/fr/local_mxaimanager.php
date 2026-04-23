@@ -90,16 +90,16 @@ $string['you_have_configured_a_provider_and_set_the_default'] = 'Vous avez confi
 $string['you_have_not_yet_configured_any_providers'] = 'Vous n\'avez pas encore configuré d\'instance de fournisseur IA. Veuillez en ajouter au moins une <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">ici</a>.';
 $string['you_have_not_yet_configured_default_providers'] = 'Vous n\'avez pas encore configuré les fournisseurs par défaut pour toutes les actions. Veuillez les configurer <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">ici</a>.';
 $string['no_available_providers'] = 'Aucune instance de fournisseur disponible';
-$string['this_provider_is_preconfigured_no_modify'] = 'Cette instance de fournisseur est préconfigurée et ne peut pas être modifiée.';
+$string['this_provider_is_managed_no_modify'] = 'Cette instance de fournisseur est gérée et ne peut pas être modifiée.';
 
 // Settings
 $string['settings:manage_page'] = 'Gérer les paramètres IA';
 $string['settings:quota_page'] = 'Quota de tokens';
-$string['settings:freemium_page'] = 'Fournisseur Freemium';
+$string['settings:billing_page'] = 'Facturation & Quotas';
 
 // Quotas globaux de tokens
-$string['quota_heading'] = 'Quotas de tokens Freemium';
-$string['quota_heading_desc'] = 'Ces quotas s\'appliquent uniquement au fournisseur Freemium intégré. Les instances de fournisseurs personnalisées (OpenAI, Mistral, etc.) ne sont pas limitées par ces quotas. Mettre 0 pour illimité.';
+$string['quota_heading'] = 'Quotas de tokens';
+$string['quota_heading_desc'] = 'Ces quotas s\'appliquent à tous les fournisseurs gérés. Mettre 0 pour illimité.';
 
 $string['daily_input_quota'] = 'Quota journalier de tokens d\'entrée';
 $string['daily_input_quota_desc'] = 'Nombre maximum de tokens d\'entrée autorisés par jour. Mettre 0 pour illimité.';
@@ -125,21 +125,6 @@ $string['quota_exceeded_monthly_output'] = 'Le quota mensuel de tokens de sortie
 $string['quota_usage_title'] = 'Utilisation des quotas de tokens';
 $string['quota_unlimited'] = 'Illimité (en fonction de votre compte fournisseur)';
 
-// Fournisseur Freemium
-$string['freemium_provider_name'] = 'Freemium';
-$string['freemium_provider_desc'] = 'Fournisseur IA gratuit intégré (chat uniquement). Utilise un modèle de texte performant avec des quotas d\'utilisation.';
-$string['ai_pack_required'] = 'Activez le pack IA pour configurer vos propres fournisseurs et profiter d\'un usage illimité.';
-$string['enable_freemium'] = 'Activer le fournisseur Freemium';
-$string['enable_freemium_desc'] = 'Lorsqu\'il est activé, un fournisseur IA gratuit intégré (chat uniquement) est disponible avec des quotas d\'utilisation. Désactivez-le pour n\'utiliser que vos propres instances de fournisseurs.';
-$string['freemium_connection_heading'] = 'Paramètres de connexion Freemium';
-$string['freemium_connection_heading_desc'] = 'Configurez le point de terminaison API pour le fournisseur freemium intégré. Ces paramètres ne sont utilisés que lorsque le fournisseur freemium est activé.';
-$string['freemium_api_key'] = 'Clé API Freemium';
-$string['freemium_api_key_desc'] = 'La clé API du fournisseur IA freemium.';
-$string['freemium_base_url'] = 'URL de base Freemium';
-$string['freemium_base_url_desc'] = 'L\'URL de base de l\'API du fournisseur IA freemium.';
-$string['freemium_model'] = 'Modèle Freemium';
-$string['freemium_model_desc'] = 'Le modèle IA à utiliser pour le fournisseur freemium.';
-$string['freemium_not_configured'] = 'Le fournisseur Freemium est activé mais non configuré. Veuillez définir la clé API dans les <a href="{$a}">paramètres Freemium</a>.';
 
 // Système de crédits
 $string['credit_heading'] = 'Paramètres des crédits IA';

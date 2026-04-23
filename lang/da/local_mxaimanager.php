@@ -89,16 +89,16 @@ $string['you_have_configured_a_provider_and_set_the_default'] = 'Du har konfigur
 $string['you_have_not_yet_configured_any_providers'] = 'Du har endnu ikke konfigureret nogen AI provider-instanser. Tilføj venligst mindst én provider <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">her</a>.';
 $string['you_have_not_yet_configured_default_providers'] = 'Du har endnu ikke konfigureret standard provider-instanser for alle handlinger. Konfigurer venligst standard provider-instanser <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">her</a>.';
 $string['no_available_providers'] = 'Ingen tilgængelige provider-instanser';
-$string['this_provider_is_preconfigured_no_modify'] = 'Denne provider instans er forudkonfigureret og kan ikke ændres.';
+$string['this_provider_is_managed_no_modify'] = 'Denne provider instans er administreret og kan ikke ændres.';
 
 // Settings
 $string['settings:manage_page'] = 'Administrer AI Indstillinger';
 $string['settings:quota_page'] = 'Token Kvote';
-$string['settings:freemium_page'] = 'Freemium Provider';
+$string['settings:billing_page'] = 'Fakturering & Kvoter';
 
 // Global Token Quota
-$string['quota_heading'] = 'Freemium Token Kvoter';
-$string['quota_heading_desc'] = 'Disse kvoter gælder kun for den indbyggede Freemium-provider. Brugerdefinerede provider-instanser (OpenAI, Mistral, osv.) er ubegrænsede. Sæt til 0 for ubegrænset.';
+$string['quota_heading'] = 'Token Kvoter';
+$string['quota_heading_desc'] = 'Disse kvoter gælder for alle administrerede providere. Sæt til 0 for ubegrænset.';
 
 $string['daily_input_quota'] = 'Daglig input token-kvote';
 $string['daily_input_quota_desc'] = 'Maksimalt antal input tokens tilladt pr. dag. Sæt til 0 for ubegrænset.';
@@ -124,21 +124,6 @@ $string['quota_exceeded_monthly_output'] = 'Månedlig output token-kvote overskr
 $string['quota_usage_title'] = 'Token Kvote Forbrug';
 $string['quota_unlimited'] = 'Ubegrænset (baseret på din provider-konto)';
 
-// Freemium provider
-$string['freemium_provider_name'] = 'Freemium';
-$string['freemium_provider_desc'] = 'Indbygget gratis AI-provider (kun chat). Bruger en effektiv tekstmodel med forbrugskvoter.';
-$string['ai_pack_required'] = 'Aktiver AI-pakken for at konfigurere dine egne providere og låse op for ubegrænset brug.';
-$string['enable_freemium'] = 'Aktiver Freemium provider';
-$string['enable_freemium_desc'] = 'Når aktiveret, er en indbygget gratis AI-provider (kun chat) tilgængelig med forbrugskvoter. Deaktiver dette, hvis du kun vil bruge dine egne provider-instanser.';
-$string['freemium_connection_heading'] = 'Freemium Forbindelsesindstillinger';
-$string['freemium_connection_heading_desc'] = 'Konfigurer API-endepunktet for den indbyggede Freemium-provider. Disse indstillinger bruges kun, når Freemium-provideren er aktiveret.';
-$string['freemium_api_key'] = 'Freemium API Nøgle';
-$string['freemium_api_key_desc'] = 'API-nøglen til Freemium AI-provideren.';
-$string['freemium_base_url'] = 'Freemium Base URL';
-$string['freemium_base_url_desc'] = 'Base URL for Freemium AI-providerens API.';
-$string['freemium_model'] = 'Freemium Model';
-$string['freemium_model_desc'] = 'AI-modellen til Freemium-provideren.';
-$string['freemium_not_configured'] = 'Freemium-provideren er aktiveret men ikke konfigureret. Angiv venligst API-nøglen i <a href="{$a}">Freemium-indstillingerne</a>.';
 
 // Credit System
 $string['credit_heading'] = 'AI Kredit Indstillinger';

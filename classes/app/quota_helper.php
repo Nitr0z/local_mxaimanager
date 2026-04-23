@@ -12,23 +12,6 @@ defined('MOODLE_INTERNAL') || die();
 class quota_helper
 {
     /**
-     * Check if the current default chat provider is preconfigured (negative ID = our accounts).
-     */
-    private static function is_using_preconfigured(): bool
-    {
-        // If freemium is disabled entirely, check if any default is preconfigured.
-        try {
-            $factory = \local_mxaimanager\app\factory::make();
-            $chat_interface = \local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion::class;
-            $default = $factory->ai()->default_provider()->repository()->get_by_action_interface($chat_interface);
-            return $default->get_provider_id() < 0;
-        } catch (\Exception $e) {
-            // No default set — check if freemium is enabled (it acts as fallback).
-            return !empty(get_config('local_mxaimanager', 'enable_freemium'));
-        }
-    }
-
-    /**
      * Returns the appropriate display data based on the configured quota mode.
      *
      * @return array Template data for quota display.
@@ -45,8 +28,6 @@ class quota_helper
 
     /**
      * Returns credit wallet bar data.
-     * Always shown for admins regardless of provider type.
-     * Enforcement is handled separately in action_handler::enforce_quotas().
      *
      * @return array{has_credits: bool, ...}
      */
@@ -93,20 +74,12 @@ class quota_helper
     /**
      * Returns token quota bar data for all configured quotas (daily/weekly/monthly × input/output).
      * Used when quota_display_mode = 'tokens'.
+     * Quotas apply to all managed providers.
      *
-     * @return array{has_quotas: bool, quota_unlimited: bool, bars: array}
+     * @return array{has_quotas: bool, bars: array}
      */
     public static function get_quota_bars(): array
     {
-        // If client uses their own provider, show unlimited.
-        if (!self::is_using_preconfigured()) {
-            return [
-                'has_quotas' => false,
-                'quota_unlimited' => true,
-                'bars' => [],
-            ];
-        }
-
         global $DB;
 
         $now = time();

@@ -1,18 +1,18 @@
 {{#ai_pack_owned}}
-{{^is_preconfigured}}
+{{^is_managed}}
     <div>
         <a class="btn btn-primary" href="/local/mxaimanager/view.php?view=manage_providers&action=edit&id={{id}}"><i
             class="fa fa-pencil"></i></a>
         <a class="btn btn-danger" href="/local/mxaimanager/view.php?view=manage_providers&action=delete&id={{id}}"><i
             class="fa fa-trash"></i></a>
     </div>
-{{/is_preconfigured}}
-{{#is_preconfigured}}
-    <p>{{#str}}this_provider_is_preconfigured_no_modify, local_mxaimanager{{/str}}</p>
-{{/is_preconfigured}}
+{{/is_managed}}
+{{#is_managed}}
+    <p>{{#str}}this_provider_is_managed_no_modify, local_mxaimanager{{/str}}</p>
+{{/is_managed}}
 {{/ai_pack_owned}}
 {{^ai_pack_owned}}
-{{#is_preconfigured}}
-    <p>{{#str}}this_provider_is_preconfigured_no_modify, local_mxaimanager{{/str}}</p>
-{{/is_preconfigured}}
+{{#is_managed}}
+    <p>{{#str}}this_provider_is_managed_no_modify, local_mxaimanager{{/str}}</p>
+{{/is_managed}}
 {{/ai_pack_owned}}

@@ -90,16 +90,16 @@ $string['you_have_configured_a_provider_and_set_the_default'] = 'You have config
 $string['you_have_not_yet_configured_any_providers'] = 'You\'ve not yet configured any AI provider instances. Please add at least one provider <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">here</a>.';
 $string['you_have_not_yet_configured_default_providers'] = 'You\'ve not yet configured default provider instances for all actions. Please configure default provider instances <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">here</a>.';
 $string['no_available_providers'] = 'No available provider instances';
-$string['this_provider_is_preconfigured_no_modify'] = 'This provider instance is preconfigured and cannot be modified.';
+$string['this_provider_is_managed_no_modify'] = 'This provider instance is managed and cannot be modified.';
 
 // Settings
 $string['settings:manage_page'] = 'Manage AI Settings';
 $string['settings:quota_page'] = 'Token Quota';
-$string['settings:freemium_page'] = 'Freemium Provider';
+$string['settings:billing_page'] = 'Billing & Quotas';
 
 // Global Token Quota
-$string['quota_heading'] = 'Freemium Token Quotas';
-$string['quota_heading_desc'] = 'These quotas only apply to the built-in Freemium provider. Custom provider instances (OpenAI, Mistral, etc.) are unlimited and not affected by these limits. Set to 0 for unlimited.';
+$string['quota_heading'] = 'Token Quotas';
+$string['quota_heading_desc'] = 'These quotas apply to all managed providers. Set to 0 for unlimited.';
 
 $string['daily_input_quota'] = 'Daily input token quota';
 $string['daily_input_quota_desc'] = 'Maximum input tokens allowed per day. Set to 0 for unlimited.';
@@ -125,21 +125,6 @@ $string['quota_exceeded_monthly_output'] = 'Monthly output token quota exceeded.
 $string['quota_usage_title'] = 'Token Quota Usage';
 $string['quota_unlimited'] = 'Unlimited (depends on your provider account)';
 
-// Freemium provider
-$string['freemium_provider_name'] = 'Freemium';
-$string['freemium_provider_desc'] = 'Built-in free AI provider (chat only). Uses a performant text model with usage quotas.';
-$string['ai_pack_required'] = 'Enable the AI pack to configure your own providers and unlock unlimited usage.';
-$string['enable_freemium'] = 'Enable Freemium provider';
-$string['enable_freemium_desc'] = 'When enabled, a built-in free AI provider (chat only) is available with usage quotas. Disable this if you only want to use your own provider instances.';
-$string['freemium_connection_heading'] = 'Freemium Connection Settings';
-$string['freemium_connection_heading_desc'] = 'Configure the API endpoint for the built-in freemium provider. These settings are only used when the freemium provider is enabled.';
-$string['freemium_api_key'] = 'Freemium API Key';
-$string['freemium_api_key_desc'] = 'The API key for the freemium AI provider.';
-$string['freemium_base_url'] = 'Freemium Base URL';
-$string['freemium_base_url_desc'] = 'The base URL for the freemium AI provider API.';
-$string['freemium_model'] = 'Freemium Model';
-$string['freemium_model_desc'] = 'The AI model to use for the freemium provider.';
-$string['freemium_not_configured'] = 'The Freemium provider is enabled but not configured. Please set the API key in the <a href="{$a}">Freemium settings</a>.';
 
 // Credit System
 $string['credit_heading'] = 'AI Credit Settings';

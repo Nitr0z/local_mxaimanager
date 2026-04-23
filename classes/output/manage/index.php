@@ -31,11 +31,6 @@ class index implements named_templatable, renderable
         $no_providers = $this->base_factory->ai()->provider()->repository()->get_all()->empty();
         $no_default_providers = $this->base_factory->ai()->default_provider()->repository()->get_all()->empty();
 
-        // Check if freemium is enabled but not configured.
-        $freemium_enabled = !empty(get_config('local_mxaimanager', 'enable_freemium'));
-        $freemium_api_key = get_config('local_mxaimanager', 'freemium_api_key');
-        $freemium_not_configured = $freemium_enabled && empty($freemium_api_key);
-
         // Get display data based on configured quota mode (read-only for clients).
         $quota_data = quota_helper::get_display_data();
 
@@ -43,10 +38,6 @@ class index implements named_templatable, renderable
             'general' => true,
             'no_providers' => $no_providers,
             'no_default_providers' => $no_default_providers,
-            'freemium_not_configured' => $freemium_not_configured,
-            'freemium_settings_url' => (new \moodle_url('/admin/settings.php', [
-                'section' => 'local_mxaimanager_freemium'
-            ]))->out(false),
         ], $quota_data);
     }
 }

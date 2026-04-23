@@ -11,7 +11,7 @@ Moxis AI Manager is a Moodle plugin for managing AI features. It provides a cent
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                   Admin Settings Page                     │
-│  Freemium config, Credit wallet, Managed providers       │
+│  Billing & Quotas, Credit wallet, Managed providers     │
 ├──────────────────────────────────────────────────────────┤
 │                   Manage UI Pages                         │
 │  Providers (browse/add/edit/delete)                      │
@@ -33,16 +33,7 @@ Moxis AI Manager is a Moodle plugin for managing AI features. It provides a cent
 
 All settings are accessible via **Site Administration → Plugins → Local plugins → Moxis AI Manager**.
 
-### Freemium Provider
-
-| Setting | Description |
-|---------|-------------|
-| `enable_freemium` | Toggle the built-in Freemium AI provider |
-| `freemium_api_key` | API key (stored masked) |
-| `freemium_base_url` | API endpoint (default: `https://api.scaleway.ai/v1`) |
-| `freemium_model` | Chat model for the Freemium provider |
-
-### Credit System
+### Billing & Quotas
 
 | Setting | Description |
 |---------|-------------|
@@ -65,22 +56,21 @@ When `quota_display_mode = tokens`, per-period token limits are available:
 
 ## Provider Types
 
-| Type | ID Range | Credit-limited | Editable | Source |
-|------|----------|----------------|----------|--------|
-| **Preconfigured** | Negative (`-1, -2...`) | ✅ Always | ❌ Never | `$CFG->local_mxaimanager_preconfigured_providers` |
-| **Managed** | Positive (in `managed_provider_ids`) | ✅ Yes | ❌ Blocked | Added via UI, locked via setting |
-| **Client-owned** | Positive (not in list) | ❌ Unlimited | ✅ Full | Added via UI |
+| Type | Credit-limited | Editable | Description |
+|------|----------------|----------|-------------|
+| **Managed** | ✅ Yes | ❌ Blocked | Added via UI, locked via `managed_provider_ids` setting |
+| **Client-owned** | ❌ Unlimited | ✅ Full | Added via UI, not in managed list |
 
 ### Managed Provider IDs
 
-To mark your own providers as credit-limited:
+To mark providers as credit-limited and non-editable:
 1. Add providers via the UI normally (they get positive IDs like `1`, `2`, etc.)
 2. Go to **Settings → Managed provider IDs**
 3. Enter the IDs: `1, 2`
 4. These providers are now:
    - Subject to credit/token limits
    - Non-editable and non-deletable by the client
-   - Shown as "preconfigured" in the providers table
+   - Shown as "managed" in the providers table
 
 ## Credit Billing System
 
@@ -141,7 +131,6 @@ Individual ledger entries can be toggled active/inactive without deletion. This 
 | Scaleway | ✅ | ✅ | ✅ | — | — |
 | Ollama | ✅ | ✅ | — | — | — |
 | Nebius | ✅ | ✅ | ✅ | — | — |
-| Freemium | ✅ | — | — | — | — |
 
 ## Localization
 
@@ -237,6 +226,15 @@ Usage logs store: feature_id, provider_id, request/response JSON, token counts, 
 
 ## Changelog
 
+* **1.6.0 (2026042303)**
+    - **BREAKING**: Removed Freemium provider class and preconfigured provider system (negative IDs).
+    - All providers are now database-backed. Use `managed_provider_ids` to lock providers.
+    - Renamed settings page from "Freemium Provider" to "Billing & Quotas".
+    - Simplified `provider_resolver` — no more auto-fallback to preconfigured defaults.
+    - Simplified `action_handler` — quota enforcement based solely on `managed_provider_ids`.
+    - Updated `quota_helper` — removed `is_using_preconfigured()` check.
+    - Renamed `is_preconfigured` → `is_managed` in templates.
+    - Removed 15 freemium-specific lang strings across EN/FR/DA.
 * **1.5.0 (2026042301)**
     - **Prepaid Credit Wallet**: Ledger-based billing with per-recharge expiry and soft-disable toggle.
     - **Managed Provider IDs**: Admin setting to lock specific providers to credit limits (non-editable by clients).
@@ -252,9 +250,7 @@ Usage logs store: feature_id, provider_id, request/response JSON, token counts, 
     - Added `provider_id` and `credits_used` columns to usage logs.
     - Credit multiplier support per provider (`credit_multiplier` in config JSON).
 * **1.3.0 (2026032700)**
-    - Freemium provider with configurable API endpoint, model, and token quotas.
     - Daily/weekly/monthly token quotas with period-based enforcement.
-    - Preconfigured providers via `$CFG->local_mxaimanager_preconfigured_providers`.
     - Quota display bars in manage pages.
 * **1.0.5 (2026031600)**
     - Model fields now use autocomplete dropdowns with known models per provider.

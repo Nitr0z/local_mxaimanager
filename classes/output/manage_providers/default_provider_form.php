@@ -41,38 +41,6 @@ class default_provider_form extends \moodleform
             $data[$default_provider->get_action_interface()] = (string)$default_provider->get_provider_id();
         }
 
-        // Fill in defaults from preconfigured providers if not already set.
-        $preconfigured_providers = $this->base_factory->ai()->provider()->repository()->get_all()->filter(
-            static function (\local_mxaimanager\app\ai\provider\entity $provider) {
-                if (!$provider->get_is_preconfigured()) {
-                    return false;
-                }
-
-                $config = json_decode($provider->get_config_json(), true);
-
-                return isset($config['default_unless_explicitly_set']) && $config['default_unless_explicitly_set'];
-            }
-        );
-        foreach ($this->base_factory->ai()->provider()->get_actions() as $interface => $action_name) {
-            if (isset($data[$interface])) {
-                continue;
-            }
-
-            $preconfigured_providers_supporting_action = $preconfigured_providers->filter(
-                static function (\local_mxaimanager\app\ai\provider\entity $provider) use ($interface) {
-                    $classes_implemented = class_implements($provider->get_classname());
-
-                    return in_array($interface, $classes_implemented, true);
-                }
-            );
-
-            if ($preconfigured_providers_supporting_action->empty()) {
-                continue;
-            }
-
-            $data[$interface] = $preconfigured_providers_supporting_action->first()->get_id();
-        }
-
         $this->set_data($data);
     }
 
@@ -106,7 +74,7 @@ class default_provider_form extends \moodleform
                 continue;
             }
 
-            // Check all providers (including preconfigured) that support this action.
+            // Check all providers that support this action.
             $provider_exists = $all_providers->filter(
                 static function (entity $provider) use ($data, $interface) {
                     if (!isset($data[$interface])) {
@@ -134,7 +102,7 @@ class default_provider_form extends \moodleform
         $all_providers = $this->base_factory->ai()->provider()->repository()->get_all();
 
         foreach ($actions as $interface => $action) {
-            // Filter all providers (including preconfigured) that support this action.
+            // Filter all providers that support this action.
             $configured_providers_supporting_action = $all_providers->filter(
                 static function (entity $provider) use ($interface) {
                     $classes_implemented = class_implements($provider->get_classname());

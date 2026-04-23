@@ -25,49 +25,8 @@ if ($hassiteconfig) {
         )
     );
 
-    // Freemium Provider settings page.
-    $settings = new admin_settingpage('local_mxaimanager_freemium', get_string('settings:freemium_page', $component));
-
-    // Enable/disable toggle.
-    $settings->add(new admin_setting_configcheckbox(
-        'local_mxaimanager/enable_freemium',
-        get_string('enable_freemium', $component),
-        get_string('enable_freemium_desc', $component),
-        '1'
-    ));
-
-    // Freemium connection heading.
-    $settings->add(new admin_setting_heading(
-        'local_mxaimanager/freemium_connection_heading',
-        get_string('freemium_connection_heading', $component),
-        get_string('freemium_connection_heading_desc', $component)
-    ));
-
-    // API key (password field — masked in UI, stored in DB).
-    $settings->add(new admin_setting_configpasswordunmask(
-        'local_mxaimanager/freemium_api_key',
-        get_string('freemium_api_key', $component),
-        get_string('freemium_api_key_desc', $component),
-        ''
-    ));
-
-    // Base URL.
-    $settings->add(new admin_setting_configtext(
-        'local_mxaimanager/freemium_base_url',
-        get_string('freemium_base_url', $component),
-        get_string('freemium_base_url_desc', $component),
-        'https://api.scaleway.ai/v1',
-        PARAM_URL
-    ));
-
-    // Model.
-    $settings->add(new admin_setting_configtext(
-        'local_mxaimanager/freemium_model',
-        get_string('freemium_model', $component),
-        get_string('freemium_model_desc', $component),
-        '',
-        PARAM_TEXT
-    ));
+    // Billing & Quotas settings page.
+    $settings = new admin_settingpage('local_mxaimanager_billing', get_string('settings:billing_page', $component));
 
     // --- Credit System Settings ---
     $settings->add(new admin_setting_heading(

@@ -59,7 +59,7 @@ class admin_setting_credit_recharge extends \admin_setting
             if ($amount > 0) {
                 credit_service::recharge($amount, 'recharge', $note, $USER->id, $expires_at);
                 redirect(new \moodle_url('/admin/settings.php', [
-                    'section' => 'local_mxaimanager_freemium'
+                    'section' => 'local_mxaimanager_billing'
                 ]), get_string('credit_recharged', 'local_mxaimanager'), 0, 'success');
             }
         }
@@ -70,7 +70,7 @@ class admin_setting_credit_recharge extends \admin_setting
             require_sesskey();
             credit_service::toggle($toggle_id);
             redirect(new \moodle_url('/admin/settings.php', [
-                'section' => 'local_mxaimanager_freemium'
+                'section' => 'local_mxaimanager_billing'
             ]));
         }
 
@@ -83,7 +83,7 @@ class admin_setting_credit_recharge extends \admin_setting
         // Build ledger history.
         $ledger = credit_service::get_ledger_history(15);
         $ledger_rows = '';
-        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_freemium']);
+        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']);
         $sesskey = sesskey();
         foreach ($ledger as $entry) {
             $date = userdate($entry->timecreated, '%d/%m/%Y %H:%M');
@@ -152,7 +152,7 @@ class admin_setting_credit_recharge extends \admin_setting
         $recharge_label = get_string('credit_recharge', 'local_mxaimanager');
         $amount_ph = get_string('credit_recharge_amount', 'local_mxaimanager');
         $note_ph = get_string('credit_recharge_note', 'local_mxaimanager');
-        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_freemium']);
+        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']);
 
         $expiry_ph = get_string('credit_recharge_expiry', 'local_mxaimanager');
 
