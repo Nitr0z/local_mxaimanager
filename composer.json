@@ -1,0 +1,15 @@
+{
+    "name": "elearningtouch/local_mxaimanager",
+    "description": "local_mxaimanager",
+    "type": "moodle-local",
+    "license": "GPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "local_courseai\\": "classes/"
+        }
+    },
+    "require": {},
+    "extra": {
+        "installer-name": "mxaimanager"
+    }
+}
