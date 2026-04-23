@@ -22,7 +22,8 @@ class admin_setting_credit_recharge extends \admin_setting
             '',
             ''
         );
-        $this->nosave = true;
+        // nosave is NOT set here — we need write_setting() to be called on POST
+        // so that credit recharge and toggle actions are processed before Moodle redirects.
     }
 
     /**
@@ -34,20 +35,13 @@ class admin_setting_credit_recharge extends \admin_setting
     }
 
     /**
-     * Process the recharge if form was submitted.
+     * Process the recharge or toggle if form was submitted.
+     * Moodle calls write_setting() on POST before redirecting,
+     * so output_html() never sees the POST data.
      */
     public function write_setting($data)
     {
-        // Handled via separate POST in output_html.
-        return '';
-    }
-
-    /**
-     * Render the recharge form and credit ledger.
-     */
-    public function output_html($data, $query = ''): string
-    {
-        global $OUTPUT, $USER;
+        global $USER;
 
         // Handle recharge POST.
         if (optional_param('credit_recharge_submit', false, PARAM_BOOL)) {
@@ -58,9 +52,6 @@ class admin_setting_credit_recharge extends \admin_setting
             $expires_at = !empty($expiry_str) ? strtotime($expiry_str . ' 23:59:59') : null;
             if ($amount > 0) {
                 credit_service::recharge($amount, 'recharge', $note, $USER->id, $expires_at);
-                redirect(new \moodle_url('/admin/settings.php', [
-                    'section' => 'local_mxaimanager_billing'
-                ]), get_string('credit_recharged', 'local_mxaimanager'), 0, 'success');
             }
         }
 
@@ -69,10 +60,17 @@ class admin_setting_credit_recharge extends \admin_setting
         if ($toggle_id > 0) {
             require_sesskey();
             credit_service::toggle($toggle_id);
-            redirect(new \moodle_url('/admin/settings.php', [
-                'section' => 'local_mxaimanager_billing'
-            ]));
         }
+
+        return '';
+    }
+
+    /**
+     * Render the recharge form and credit ledger.
+     */
+    public function output_html($data, $query = ''): string
+    {
+        global $OUTPUT, $USER;
 
         // Build current status.
         $total = credit_service::get_total_allocated();
