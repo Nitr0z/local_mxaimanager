@@ -17,15 +17,12 @@ use local_mxaimanager\app\factory as base_factory;
 class default_provider_form extends \moodleform
 {
     private base_factory $base_factory;
-    private bool $ai_pack_owned;
 
     public function __construct(
         base_factory $base_factory,
-        \moodle_url $url,
-        bool $ai_pack_owned = true
+        \moodle_url $url
     ) {
         $this->base_factory = $base_factory;
-        $this->ai_pack_owned = $ai_pack_owned;
 
         parent::__construct($url);
     }
@@ -49,16 +46,7 @@ class default_provider_form extends \moodleform
         $mform = $this->_form;
 
         $this->add_default_actions($mform);
-
-        if (!$this->ai_pack_owned) {
-            // Freeze all fields — read-only when AI pack is not owned.
-            $actions = $this->base_factory->ai()->provider()->get_actions();
-            foreach ($actions as $interface => $action) {
-                $mform->freeze($interface);
-            }
-        } else {
-            $this->add_action_buttons();
-        }
+        $this->add_action_buttons();
     }
 
     public function validation($data, $files): array

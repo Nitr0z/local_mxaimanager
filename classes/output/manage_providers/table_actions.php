@@ -7,12 +7,10 @@ use renderer_base;
 class table_actions implements \renderable, \core\output\named_templatable
 {
     private int $id;
-    private bool $ai_pack_owned;
 
-    public function __construct(int $id, bool $ai_pack_owned = true)
+    public function __construct(int $id)
     {
         $this->id = $id;
-        $this->ai_pack_owned = $ai_pack_owned;
     }
 
     public function get_template_name(renderer_base $renderer): string
@@ -26,7 +24,6 @@ class table_actions implements \renderable, \core\output\named_templatable
         return [
             'id' => $this->id,
             'is_managed' => $is_managed,
-            'ai_pack_owned' => $this->ai_pack_owned,
         ];
     }
 }

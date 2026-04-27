@@ -27,16 +27,6 @@ class manage_providers implements interfaces\view
         $this->page = $this->base_factory->page();
     }
 
-    /**
-     * Check if the AI pack is owned. If touchlite_admin is not installed, allow full access.
-     */
-    private function is_ai_pack_owned(): bool
-    {
-        if (!class_exists(\local_touchlite_admin\extensions_manager::class)) {
-            return true;
-        }
-        return \local_touchlite_admin\extensions_manager::is_pack_owned('ai');
-    }
 
     public function action(string $action): string
     {
@@ -69,8 +59,7 @@ class manage_providers implements interfaces\view
     {
         $this->page_setup();
 
-        $ai_pack_owned = $this->is_ai_pack_owned();
-        $default_provider_form = new default_provider_form($this->base_factory, $this->url, $ai_pack_owned);
+        $default_provider_form = new default_provider_form($this->base_factory, $this->url);
 
         $default_providers = $this->base_factory->ai()->default_provider()->repository()->get_all();
         $default_provider_form->load_data($default_providers);
@@ -115,7 +104,7 @@ class manage_providers implements interfaces\view
         $output = $this->base_factory->output()->header();
         $output .= $this->base_factory->output()->render(
             new \local_mxaimanager\output\manage_providers\browse(
-                $this->base_factory, $this->url, $default_provider_form, $ai_pack_owned
+                $this->base_factory, $this->url, $default_provider_form
             )
         );
         $output .= $this->base_factory->output()->footer();
@@ -130,11 +119,6 @@ class manage_providers implements interfaces\view
      */
     public function add(): string
     {
-        if (!$this->is_ai_pack_owned()) {
-            $this->url->param('action', 'browse');
-            redirect($this->url);
-        }
-
         $this->page_setup();
 
         $form = new \local_mxaimanager\output\manage_providers\form(
@@ -215,11 +199,6 @@ class manage_providers implements interfaces\view
      */
     public function edit(): string
     {
-        if (!$this->is_ai_pack_owned()) {
-            $this->url->param('action', 'browse');
-            redirect($this->url);
-        }
-
         $provider_id = required_param('id', PARAM_INT);
         $this->url->param('id', $provider_id);
 
@@ -286,11 +265,6 @@ class manage_providers implements interfaces\view
 
     public function delete(): string
     {
-        if (!$this->is_ai_pack_owned()) {
-            $this->url->param('action', 'browse');
-            redirect($this->url);
-        }
-
         $provider_id = required_param('id', PARAM_INT);
         $this->url->param('id', $provider_id);
 

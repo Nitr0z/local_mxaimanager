@@ -1,4 +1,3 @@
-{{#ai_pack_owned}}
 {{^is_managed}}
     <div>
         <a class="btn btn-primary" href="/local/mxaimanager/view.php?view=manage_providers&action=edit&id={{id}}"><i
@@ -10,9 +9,3 @@
 {{#is_managed}}
     <p>{{#str}}this_provider_is_managed_no_modify, local_mxaimanager{{/str}}</p>
 {{/is_managed}}
-{{/ai_pack_owned}}
-{{^ai_pack_owned}}
-{{#is_managed}}
-    <p>{{#str}}this_provider_is_managed_no_modify, local_mxaimanager{{/str}}</p>
-{{/is_managed}}
-{{/ai_pack_owned}}
