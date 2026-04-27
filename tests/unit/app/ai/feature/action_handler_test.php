@@ -187,5 +187,242 @@ class action_handler_test extends base_testcase
         $handler->create_embedding(new entity(), 'Hello world', 256, 4, ['model' => 'test']);
     }
 
+    // --- Continuation and markdown stripping tests (restored from upstream) ---
 
+    public function test_chat_completion_continuation_with_json_mode(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        // First call: truncated response.
+        // Second call: continuation completes.
+        $handler_mock->expects($this->exactly(2))
+            ->method('chat_completion')
+            ->willReturnOnConsecutiveCalls(
+                new chat_completion_request([], [], '{"partial":', 10, 5, 'length'),
+                new chat_completion_request([], [], '"value"}', 15, 3, 'stop')
+            );
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+
+        $this->assertEquals('{"partial":"value"}', $result);
+    }
+
+    public function test_chat_completion_no_continuation_for_non_json_mode(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        // Even though finish_reason is 'length', non-JSON mode should NOT continue.
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'partial text', 10, 5, 'length'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+
+        $this->assertEquals('partial text', $result);
+    }
+
+    public function test_chat_completion_continuation_max_retries_respected(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        // All calls return truncated — should stop after MAX_CONTINUATION_ATTEMPTS + 1 (initial).
+        $handler_mock->expects($this->exactly(action_handler::MAX_CONTINUATION_ATTEMPTS + 1))
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'chunk', 5, 3, 'length'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+
+        // Initial + MAX_CONTINUATION_ATTEMPTS chunks.
+        $expected = str_repeat('chunk', action_handler::MAX_CONTINUATION_ATTEMPTS + 1);
+        $this->assertEquals($expected, $result);
+    }
+
+    public function test_chat_completion_continuation_with_json_schema(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $schema = ['type' => 'object', 'properties' => ['name' => ['type' => 'string']]];
+
+        $handler_mock->expects($this->exactly(2))
+            ->method('chat_completion')
+            ->willReturnOnConsecutiveCalls(
+                new chat_completion_request([], [], '{"name":', 10, 5, 'length'),
+                new chat_completion_request([], [], '"Alice"}', 15, 3, 'stop')
+            );
+
+        // json_mode=false but json_schema is set → implies JSON mode for continuation.
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, $schema, 1, []);
+
+        $this->assertEquals('{"name":"Alice"}', $result);
+    }
+
+    public function test_chat_completion_strips_markdown_json_wrapper_with_json_mode(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $wrapped = "```json\n{\"key\": \"value\"}\n```";
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+
+        $this->assertEquals('{"key": "value"}', $result);
+    }
+
+    public function test_chat_completion_strips_markdown_wrapper_without_language_tag(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $wrapped = "```\n{\"key\": \"value\"}\n```";
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+
+        $this->assertEquals('{"key": "value"}', $result);
+    }
+
+    public function test_chat_completion_does_not_strip_markdown_for_non_json_mode(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $wrapped = "```json\n{\"key\": \"value\"}\n```";
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+
+        // Non-JSON mode: markdown wrapper should NOT be stripped.
+        $this->assertEquals($wrapped, $result);
+    }
+
+    public function test_chat_completion_returns_clean_json_unchanged(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $clean_json = '{"key": "value"}';
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], $clean_json, 10, 5, 'stop'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+
+        $this->assertEquals($clean_json, $result);
+    }
+
+    // --- Managed provider tests ---
+
+    public function test_is_managed_provider_empty_config(): void
+    {
+        set_config('managed_provider_ids', '', 'local_mxaimanager');
+        $this->assertFalse(action_handler::is_managed_provider(1));
+    }
+
+    public function test_is_managed_provider_single_match(): void
+    {
+        set_config('managed_provider_ids', '5', 'local_mxaimanager');
+        $this->assertTrue(action_handler::is_managed_provider(5));
+        $this->assertFalse(action_handler::is_managed_provider(3));
+    }
+
+    public function test_is_managed_provider_multiple_ids(): void
+    {
+        set_config('managed_provider_ids', '1, 3, 7', 'local_mxaimanager');
+        $this->assertTrue(action_handler::is_managed_provider(1));
+        $this->assertTrue(action_handler::is_managed_provider(3));
+        $this->assertTrue(action_handler::is_managed_provider(7));
+        $this->assertFalse(action_handler::is_managed_provider(2));
+        $this->assertFalse(action_handler::is_managed_provider(99));
+    }
+
+    public function test_is_managed_provider_with_invalid_entries(): void
+    {
+        set_config('managed_provider_ids', '1, abc, , 5', 'local_mxaimanager');
+        $this->assertTrue(action_handler::is_managed_provider(1));
+        $this->assertTrue(action_handler::is_managed_provider(5));
+        $this->assertFalse(action_handler::is_managed_provider(0));
+    }
 }

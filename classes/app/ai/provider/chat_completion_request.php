@@ -15,19 +15,22 @@ class chat_completion_request implements \JsonSerializable
     protected string $response;
     protected int $input_tokens;
     protected int $output_tokens;
+    protected string $finish_reason;
 
     public function __construct(
         array $request_json,
         array $response_json,
         string $response,
         int $input_tokens,
-        int $output_tokens
+        int $output_tokens,
+        string $finish_reason = 'stop'
     ) {
         $this->request_json = $request_json;
         $this->response_json = $response_json;
         $this->response = $response;
         $this->input_tokens = $input_tokens;
         $this->output_tokens = $output_tokens;
+        $this->finish_reason = $finish_reason;
     }
 
     public function get_request_json(): array
@@ -55,6 +58,11 @@ class chat_completion_request implements \JsonSerializable
         return $this->output_tokens;
     }
 
+    public function get_finish_reason(): string
+    {
+        return $this->finish_reason;
+    }
+
     public function jsonSerialize(): array
     {
         return [
@@ -63,6 +71,7 @@ class chat_completion_request implements \JsonSerializable
             'response' => $this->get_response(),
             'input_tokens' => $this->get_input_tokens(),
             'output_tokens' => $this->get_output_tokens(),
+            'finish_reason' => $this->get_finish_reason(),
         ];
     }
 }

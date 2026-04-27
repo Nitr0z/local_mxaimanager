@@ -20,7 +20,7 @@ Moxis AI Manager is a Moodle plugin for managing AI features. It provides a cent
 ├──────────────────────────────────────────────────────────┤
 │                   Core Services                           │
 │  action_handler  → enforce_quotas → credit_service       │
-│  provider_resolver → default_provider fallback           │
+│  provider_resolver → default_provider configuration      │
 │  quota_helper    → display data for templates            │
 ├──────────────────────────────────────────────────────────┤
 │                   Data Layer                              │
@@ -130,7 +130,7 @@ Individual ledger entries can be toggled active/inactive without deletion. This 
 | Mistral | ✅ | ✅ | — | ✅ | — |
 | Scaleway | ✅ | ✅ | ✅ | — | — |
 | Ollama | ✅ | ✅ | — | — | — |
-| Nebius | ✅ | ✅ | ✅ | — | — |
+| Nebius | ✅ | ✅ | — | — | — |
 
 ## Localization
 

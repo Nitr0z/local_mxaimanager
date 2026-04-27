@@ -66,11 +66,11 @@ class admin_setting_credit_recharge extends \admin_setting
     }
 
     /**
-     * Render the recharge form and credit ledger.
+     * Render the recharge form and credit ledger using a Mustache template.
      */
     public function output_html($data, $query = ''): string
     {
-        global $OUTPUT, $USER;
+        global $OUTPUT;
 
         // Build current status.
         $total = credit_service::get_total_allocated();
@@ -78,127 +78,67 @@ class admin_setting_credit_recharge extends \admin_setting
         $used = round($total - $balance, 1);
         $expired = credit_service::is_expired();
 
-        // Build ledger history.
-        $ledger = credit_service::get_ledger_history(15);
-        $ledger_rows = '';
-        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']);
-        $sesskey = sesskey();
-        foreach ($ledger as $entry) {
-            $date = userdate($entry->timecreated, '%d/%m/%Y %H:%M');
-            $amount = number_format((float) $entry->amount, 1);
-            $type = get_string('credit_type_' . $entry->type, 'local_mxaimanager');
-            $note = s($entry->note ?? '');
-            $expiry = !empty($entry->expires_at) ? userdate((int)$entry->expires_at, '%d/%m/%Y') : '—';
-            $is_active = !empty($entry->active);
-
-            // Toggle button.
-            $btn_class = $is_active ? 'btn-outline-danger' : 'btn-outline-success';
-            $btn_icon = $is_active ? 'fa-ban' : 'fa-check';
-            $btn_title = $is_active
-                ? get_string('credit_disable', 'local_mxaimanager')
-                : get_string('credit_enable', 'local_mxaimanager');
-            $toggle_btn = "<form method='post' action='{$action_url}' style='display:inline;'>"
-                . "<input type='hidden' name='sesskey' value='{$sesskey}'/>"
-                . "<input type='hidden' name='s_local_mxaimanager_credit_recharge_ui' value='1'/>"
-                . "<input type='hidden' name='credit_toggle_id' value='{$entry->id}'/>"
-                . "<button type='submit' class='btn btn-sm {$btn_class}' title='{$btn_title}'>"
-                . "<i class='fa {$btn_icon}'></i></button></form>";
-
-            // Row styling.
-            $row_class = $is_active ? '' : "class='text-muted'";
-            $amount_class = $is_active ? 'text-success font-weight-bold' : 'text-muted';
-            $strike_start = $is_active ? '' : '<s>';
-            $strike_end = $is_active ? '' : '</s>';
-
-            $ledger_rows .= "<tr {$row_class}>"
-                . "<td>{$date}</td>"
-                . "<td class='{$amount_class}'>{$strike_start}+{$amount}{$strike_end}</td>"
-                . "<td>{$type}</td>"
-                . "<td>{$expiry}</td>"
-                . "<td>{$note}</td>"
-                . "<td>{$toggle_btn}</td>"
-                . "</tr>";
-        }
-
-        // Status bar.
+        // Status bar calculations.
         $pct = $total > 0 ? min(100, round(($used / $total) * 100)) : 0;
         $bar_class = $expired ? 'bg-secondary' : ($pct >= 90 ? 'bg-danger' : ($pct >= 70 ? 'bg-warning' : 'bg-success'));
-        $balance_fmt = number_format($balance, 1);
-        $total_fmt = number_format($total, 1);
 
-        $status_html = '';
-        if ($total > 0) {
-            $status_html = "
-                <div class='d-flex justify-content-between mb-1'>
-                    <strong>{$balance_fmt} " . get_string('credits_remaining', 'local_mxaimanager') . "</strong>
-                    <small class='text-muted'>" . number_format($used, 1) . " / {$total_fmt}</small>
-                </div>
-                <div class='progress mb-3' style='height: 12px;'>
-                    <div class='progress-bar {$bar_class}' style='width: {$pct}%'></div>
-                </div>";
-        } else {
-            $status_html = "<div class='alert alert-info'><i class='fa fa-info-circle mr-1'></i> "
-                . get_string('credit_empty_info', 'local_mxaimanager') . "</div>";
-        }
-
-        if ($expired) {
-            $status_html .= "<div class='alert alert-danger'><i class='fa fa-exclamation-triangle mr-1'></i> "
-                . get_string('credit_expired', 'local_mxaimanager') . "</div>";
-        }
-
-        // Recharge form.
+        $action_url = (new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']))->out(false);
         $sesskey = sesskey();
-        $recharge_label = get_string('credit_recharge', 'local_mxaimanager');
-        $amount_ph = get_string('credit_recharge_amount', 'local_mxaimanager');
-        $note_ph = get_string('credit_recharge_note', 'local_mxaimanager');
-        $action_url = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']);
 
-        $expiry_ph = get_string('credit_recharge_expiry', 'local_mxaimanager');
-
-        $form_html = "
-            <form method='post' action='{$action_url}' class='form-inline mb-3'>
-                <input type='hidden' name='sesskey' value='{$sesskey}'/>
-                <input type='hidden' name='s_local_mxaimanager_credit_recharge_ui' value='1'/>
-                <input type='hidden' name='credit_recharge_submit' value='1'/>
-                <div class='form-group mr-2'>
-                    <input type='number' name='credit_recharge_amount' step='0.1' min='1'
-                           class='form-control' placeholder='{$amount_ph}' style='width: 120px;'/>
-                </div>
-                <div class='form-group mr-2'>
-                    <input type='date' name='credit_recharge_expiry' class='form-control'
-                           title='{$expiry_ph}' style='width: 160px;'/>
-                </div>
-                <div class='form-group mr-2'>
-                    <input type='text' name='credit_recharge_note' class='form-control'
-                           placeholder='{$note_ph}' style='width: 200px;'/>
-                </div>
-                <button type='submit' class='btn btn-primary btn-sm'>
-                    <i class='fa fa-plus mr-1'></i> {$recharge_label}
-                </button>
-            </form>";
-
-        // Ledger table.
-        $ledger_html = '';
-        if (!empty($ledger_rows)) {
-            $th_date = get_string('credit_history_date', 'local_mxaimanager');
-            $th_amount = get_string('credit_history_amount', 'local_mxaimanager');
-            $th_type = get_string('credit_history_type', 'local_mxaimanager');
-            $th_expiry = get_string('credit_history_expiry', 'local_mxaimanager');
-            $th_note = get_string('credit_history_note', 'local_mxaimanager');
-            $ledger_html = "
-                <table class='table table-sm table-striped mt-2'>
-                    <thead><tr><th>{$th_date}</th><th>{$th_amount}</th><th>{$th_type}</th><th>{$th_expiry}</th><th>{$th_note}</th><th></th></tr></thead>
-                    <tbody>{$ledger_rows}</tbody>
-                </table>";
+        // Build ledger rows for template.
+        $ledger = credit_service::get_ledger_history(15);
+        $ledger_rows = [];
+        foreach ($ledger as $entry) {
+            $is_active = !empty($entry->active);
+            $ledger_rows[] = [
+                'id'           => $entry->id,
+                'date'         => userdate($entry->timecreated, '%d/%m/%Y %H:%M'),
+                'amount'       => number_format((float) $entry->amount, 1),
+                'type'         => get_string('credit_type_' . $entry->type, 'local_mxaimanager'),
+                'note'         => s($entry->note ?? ''),
+                'expiry'       => !empty($entry->expires_at) ? userdate((int)$entry->expires_at, '%d/%m/%Y') : '—',
+                'is_active'    => $is_active,
+                'amount_class' => $is_active ? 'text-success font-weight-bold' : 'text-muted',
+                'btn_class'    => $is_active ? 'btn-outline-danger' : 'btn-outline-success',
+                'btn_icon'     => $is_active ? 'fa-ban' : 'fa-check',
+                'btn_title'    => $is_active
+                    ? get_string('credit_disable', 'local_mxaimanager')
+                    : get_string('credit_enable', 'local_mxaimanager'),
+                'action_url'   => $action_url,
+                'sesskey'      => $sesskey,
+            ];
         }
 
-        $html = "<div class='form-group row'>
-            <div class='col-sm-12'>
-                {$status_html}
-                {$form_html}
-                {$ledger_html}
-            </div>
-        </div>";
+        // Build template context.
+        $context = [
+            'has_credits'             => $total > 0,
+            'balance_fmt'             => number_format($balance, 1),
+            'credits_remaining_label' => get_string('credits_remaining', 'local_mxaimanager'),
+            'used_fmt'                => number_format($used, 1),
+            'total_fmt'               => number_format($total, 1),
+            'bar_class'               => $bar_class,
+            'pct'                     => $pct,
+            'is_expired'              => $expired,
+            'credit_expired_label'    => get_string('credit_expired', 'local_mxaimanager'),
+            'credit_empty_info_label' => get_string('credit_empty_info', 'local_mxaimanager'),
+            'action_url'              => $action_url,
+            'sesskey'                 => $sesskey,
+            'recharge_label'          => get_string('credit_recharge', 'local_mxaimanager'),
+            'amount_placeholder'      => get_string('credit_recharge_amount', 'local_mxaimanager'),
+            'expiry_placeholder'      => get_string('credit_recharge_expiry', 'local_mxaimanager'),
+            'note_placeholder'        => get_string('credit_recharge_note', 'local_mxaimanager'),
+            'has_ledger'              => !empty($ledger_rows),
+            'th_date'                 => get_string('credit_history_date', 'local_mxaimanager'),
+            'th_amount'               => get_string('credit_history_amount', 'local_mxaimanager'),
+            'th_type'                 => get_string('credit_history_type', 'local_mxaimanager'),
+            'th_expiry'               => get_string('credit_history_expiry', 'local_mxaimanager'),
+            'th_note'                 => get_string('credit_history_note', 'local_mxaimanager'),
+            'ledger_rows'             => $ledger_rows,
+        ];
+
+        $html = '<div class="form-group row"><div class="col-sm-12">'
+            . $OUTPUT->render_from_template('local_mxaimanager/admin_credit_recharge', $context)
+            . '</div></div>';
 
         return format_admin_setting($this, $this->visiblename, $html, $this->description);
     }

@@ -96,6 +96,8 @@ class action_handler
             $input_quota = (int) get_config('local_mxaimanager', "{$period}_input_quota");
             $output_quota = (int) get_config('local_mxaimanager', "{$period}_output_quota");
 
+            // A quota value of 0 means unlimited (no restriction for that metric).
+            // Skip this period entirely if both quotas are unlimited.
             if ($input_quota <= 0 && $output_quota <= 0) {
                 continue;
             }
@@ -108,6 +110,8 @@ class action_handler
                 ['start' => $start]
             );
 
+            // Individual checks are needed because one quota may be 0 (unlimited)
+            // while the other is set (e.g. input unlimited, output limited).
             if ($input_quota > 0 && (int)$row->used_input >= $input_quota) {
                 throw new quota_exceeded_exception($period, 'input');
             }
@@ -191,6 +195,12 @@ class action_handler
     }
 
     /**
+     * Maximum number of continuation attempts when a chat completion response
+     * is truncated (finish_reason = 'length') during JSON mode requests.
+     */
+    public const MAX_CONTINUATION_ATTEMPTS = 10;
+
+    /**
      * @param entity $feature
      * @param message[] $messages
      * @param bool $json_mode Whether to enable JSON mode (forces the response to be valid JSON).
@@ -237,8 +247,97 @@ class action_handler
             $chat_completion_request->get_output_tokens()
         );
 
-        // Return the response.
-        return $chat_completion_request->get_response();
+        $is_json_request = $json_mode || $json_schema !== null;
+        $response = $chat_completion_request->get_response();
+
+        // If the response is not truncated, return the response (with markdown stripping for JSON).
+        if ($chat_completion_request->get_finish_reason() !== 'length' || !$is_json_request) {
+            return $is_json_request ? $this->strip_markdown_json_wrapper($response) : $response;
+        }
+
+        // Response was truncated during JSON mode — attempt continuation.
+        return $this->strip_markdown_json_wrapper(
+            $this->continue_truncated_response($handler, $feature, $messages, $json_mode, $json_schema, $provider_id, $response)
+        );
+    }
+
+    /**
+     * Continue a truncated chat completion response by feeding back partial content.
+     *
+     * When a JSON mode response is truncated (finish_reason = 'length'), this method
+     * returns a non-'length' finish_reason or we hit the max continuation attempts.
+     *
+     * @param chat_completion $handler
+     * @param entity $feature
+     * @param message[] $messages
+     * @param bool $json_mode
+     * @param array|null $json_schema
+     * @param int $provider_id
+     * @param string $accumulated_response
+     * @return string
+     */
+    private function continue_truncated_response(
+        chat_completion $handler,
+        entity $feature,
+        array $messages,
+        bool $json_mode,
+        ?array $json_schema,
+        int $provider_id,
+        string $accumulated_response
+    ): string {
+        for ($attempt = 0; $attempt < self::MAX_CONTINUATION_ATTEMPTS; $attempt++) {
+            // Build continuation messages: original + partial assistant response + continue instruction.
+            $continuation_messages = array_merge(
+                $messages,
+                [
+                    new message('assistant', $accumulated_response),
+                    new message('user', 'Continue from where you left off. Do not restart, just continue the JSON output.'),
+                ]
+            );
+
+            // Make the continuation request.
+            $last_request = $handler->chat_completion($continuation_messages, $json_mode, $json_schema);
+
+            // Log each continuation call individually for accurate token tracking.
+            $this->log_usage(
+                $feature->get_id(),
+                $provider_id,
+                $last_request->get_request_json(),
+                $last_request->get_response_json(),
+                $last_request->get_input_tokens(),
+                $last_request->get_output_tokens()
+            );
+
+            // Accumulate the response content.
+            $accumulated_response .= $last_request->get_response();
+
+            // If the response is no longer truncated, we're done.
+            if ($last_request->get_finish_reason() !== 'length') {
+                break;
+            }
+        }
+
+        return $accumulated_response;
+    }
+
+    /**
+     * Strip markdown code block wrappers (```json ... ``` or ``` ... ```) from a response string.
+     *
+     * Some models wrap their JSON output in markdown code fences even when JSON mode is enabled.
+     * This method removes those wrappers so the consumer receives pure JSON.
+     *
+     * @param string $response The raw response string.
+     * @return string The response with markdown code block wrapper removed, if present.
+     */
+    private function strip_markdown_json_wrapper(string $response): string
+    {
+        $trimmed = trim($response);
+
+        if (preg_match('/^```(?:json)?\s*\n(.*)\n```$/s', $trimmed, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $response;
     }
 
     /**
