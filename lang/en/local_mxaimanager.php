@@ -97,22 +97,22 @@ $string['settings:billing_page'] = 'Billing & Quotas';
 
 // Global Token Quota
 $string['quota_heading'] = 'Token Quotas';
-$string['quota_heading_desc'] = 'These quotas apply to all managed providers. Set to 0 for unlimited.';
+$string['quota_heading_desc'] = 'Token quotas limit how many tokens can be consumed across all managed providers. Quotas stack: you can set daily limits to prevent burst usage AND monthly limits for budget control. Set any field to 0 to disable that specific limit.';
 
 $string['daily_input_quota'] = 'Daily input token quota';
-$string['daily_input_quota_desc'] = 'Maximum input tokens allowed per day. Set to 0 for unlimited.';
+$string['daily_input_quota_desc'] = 'Max input tokens per day (resets at midnight). Set to 0 to disable daily input limiting.';
 $string['daily_output_quota'] = 'Daily output token quota';
-$string['daily_output_quota_desc'] = 'Maximum output tokens allowed per day. Set to 0 for unlimited.';
+$string['daily_output_quota_desc'] = 'Max output tokens per day (resets at midnight). Set to 0 to disable daily output limiting.';
 
 $string['weekly_input_quota'] = 'Weekly input token quota';
-$string['weekly_input_quota_desc'] = 'Maximum input tokens allowed per week (resets on Monday). Set to 0 for unlimited.';
+$string['weekly_input_quota_desc'] = 'Max input tokens per week (resets on Monday). Set to 0 to disable weekly input limiting.';
 $string['weekly_output_quota'] = 'Weekly output token quota';
-$string['weekly_output_quota_desc'] = 'Maximum output tokens allowed per week (resets on Monday). Set to 0 for unlimited.';
+$string['weekly_output_quota_desc'] = 'Max output tokens per week (resets on Monday). Set to 0 to disable weekly output limiting.';
 
 $string['monthly_input_quota'] = 'Monthly input token quota';
-$string['monthly_input_quota_desc'] = 'Maximum input tokens allowed per calendar month. Set to 0 for unlimited.';
+$string['monthly_input_quota_desc'] = 'Max input tokens per calendar month. Set to 0 to disable monthly input limiting.';
 $string['monthly_output_quota'] = 'Monthly output token quota';
-$string['monthly_output_quota_desc'] = 'Maximum output tokens allowed per calendar month. Set to 0 for unlimited.';
+$string['monthly_output_quota_desc'] = 'Max output tokens per calendar month. Set to 0 to disable monthly output limiting.';
 
 $string['quota_exceeded_daily_input'] = 'Daily input token quota exceeded. Please try again tomorrow.';
 $string['quota_exceeded_daily_output'] = 'Daily output token quota exceeded. Please try again tomorrow.';

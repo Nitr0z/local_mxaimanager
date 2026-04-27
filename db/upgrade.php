@@ -39,7 +39,7 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
     }
 
     if ($oldversion < 2026032700) {
-        // Set default freemium quota values for existing installations.
+        // Set default token quota values for existing installations.
         $defaults = [
             'daily_input_quota'    => 50000,
             'daily_output_quota'   => 32000,

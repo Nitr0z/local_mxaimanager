@@ -95,24 +95,23 @@ $string['settings:manage_page'] = 'Gérer les paramètres IA';
 $string['settings:quota_page'] = 'Quota de tokens';
 $string['settings:billing_page'] = 'Facturation & Quotas';
 
-// Quotas globaux de tokens
 $string['quota_heading'] = 'Quotas de tokens';
-$string['quota_heading_desc'] = 'Ces quotas s\'appliquent à tous les fournisseurs gérés. Mettre 0 pour illimité.';
+$string['quota_heading_desc'] = 'Les quotas de tokens limitent la consommation sur tous les fournisseurs gérés. Les quotas se cumulent : vous pouvez définir des limites journalières pour éviter les pics ET des limites mensuelles pour le contrôle budgétaire. Mettez 0 pour désactiver un quota spécifique.';
 
-$string['daily_input_quota'] = 'Quota journalier de tokens d\'entrée';
-$string['daily_input_quota_desc'] = 'Nombre maximum de tokens d\'entrée autorisés par jour. Mettre 0 pour illimité.';
-$string['daily_output_quota'] = 'Quota journalier de tokens de sortie';
-$string['daily_output_quota_desc'] = 'Nombre maximum de tokens de sortie autorisés par jour. Mettre 0 pour illimité.';
+$string['daily_input_quota'] = 'Quota journalier — tokens d\'entrée';
+$string['daily_input_quota_desc'] = 'Max de tokens d\'entrée par jour (réinitialisation à minuit). Mettre 0 pour désactiver.';
+$string['daily_output_quota'] = 'Quota journalier — tokens de sortie';
+$string['daily_output_quota_desc'] = 'Max de tokens de sortie par jour (réinitialisation à minuit). Mettre 0 pour désactiver.';
 
-$string['weekly_input_quota'] = 'Quota hebdomadaire de tokens d\'entrée';
-$string['weekly_input_quota_desc'] = 'Nombre maximum de tokens d\'entrée autorisés par semaine (réinitialisation le lundi). Mettre 0 pour illimité.';
-$string['weekly_output_quota'] = 'Quota hebdomadaire de tokens de sortie';
-$string['weekly_output_quota_desc'] = 'Nombre maximum de tokens de sortie autorisés par semaine (réinitialisation le lundi). Mettre 0 pour illimité.';
+$string['weekly_input_quota'] = 'Quota hebdomadaire — tokens d\'entrée';
+$string['weekly_input_quota_desc'] = 'Max de tokens d\'entrée par semaine (réinitialisation le lundi). Mettre 0 pour désactiver.';
+$string['weekly_output_quota'] = 'Quota hebdomadaire — tokens de sortie';
+$string['weekly_output_quota_desc'] = 'Max de tokens de sortie par semaine (réinitialisation le lundi). Mettre 0 pour désactiver.';
 
-$string['monthly_input_quota'] = 'Quota mensuel de tokens d\'entrée';
-$string['monthly_input_quota_desc'] = 'Nombre maximum de tokens d\'entrée autorisés par mois calendaire. Mettre 0 pour illimité.';
-$string['monthly_output_quota'] = 'Quota mensuel de tokens de sortie';
-$string['monthly_output_quota_desc'] = 'Nombre maximum de tokens de sortie autorisés par mois calendaire. Mettre 0 pour illimité.';
+$string['monthly_input_quota'] = 'Quota mensuel — tokens d\'entrée';
+$string['monthly_input_quota_desc'] = 'Max de tokens d\'entrée par mois calendaire. Mettre 0 pour désactiver.';
+$string['monthly_output_quota'] = 'Quota mensuel — tokens de sortie';
+$string['monthly_output_quota_desc'] = 'Max de tokens de sortie par mois calendaire. Mettre 0 pour désactiver.';
 
 $string['quota_exceeded_daily_input'] = 'Le quota journalier de tokens d\'entrée a été atteint. Veuillez réessayer demain.';
 $string['quota_exceeded_daily_output'] = 'Le quota journalier de tokens de sortie a été atteint. Veuillez réessayer demain.';
