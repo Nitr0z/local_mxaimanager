@@ -117,7 +117,7 @@ class mistral_test extends \base_testcase
             'embedding_model' => 'mistral-embed'
         ];
 
-        $expected_response = '{"choices":[{"message":{"content":"Hello, world!"}}], "usage":{"prompt_tokens": 5, "completion_tokens": 5}}';
+        $expected_response = '{"choices":[{"message":{"content":"Hello, world!"},"finish_reason":"stop"}], "usage":{"prompt_tokens": 5, "completion_tokens": 5}}';
 
         $this->mock_curl->expects($this->once())
             ->method('post')
@@ -139,6 +139,7 @@ class mistral_test extends \base_testcase
         $result = $provider->chat_completion($messages);
 
         $this->assertEquals('Hello, world!', $result->get_response());
+        $this->assertEquals('stop', $result->get_finish_reason());
     }
 
     public function test_chat_completion_missing_chat_model(): void

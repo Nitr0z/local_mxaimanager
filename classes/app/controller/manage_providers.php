@@ -27,7 +27,6 @@ class manage_providers implements interfaces\view
         $this->page = $this->base_factory->page();
     }
 
-
     public function action(string $action): string
     {
         $this->url->param('action', $action);

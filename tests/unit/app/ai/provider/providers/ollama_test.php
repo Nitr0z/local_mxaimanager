@@ -117,7 +117,7 @@ class ollama_test extends \base_testcase
             'embedding_model' => 'some-embedding-model'
         ];
 
-        $expected_response = '{"message":{"content":"Hello, world!"},"prompt-eval-count": 1,"eval-count": 1}';
+        $expected_response = '{"message":{"content":"Hello, world!"},"done":true,"done_reason":"stop","prompt-eval-count": 1,"eval-count": 1}';
 
         $this->mock_curl->expects($this->once())
             ->method('post')
@@ -139,6 +139,34 @@ class ollama_test extends \base_testcase
         $result = $provider->chat_completion($messages);
 
         $this->assertEquals('Hello, world!', $result->get_response());
+        $this->assertEquals('stop', $result->get_finish_reason());
+    }
+
+    public function test_chat_completion_finish_reason_length(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.ollama.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'some-chat-model',
+            'embedding_model' => 'some-embedding-model'
+        ];
+
+        $expected_response = '{"message":{"content":"{\\"partial\\":"},"done":false,"done_reason":"length","prompt-eval-count": 1,"eval-count": 10}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\ollama(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $messages = [['role' => 'user', 'content' => 'Hello']];
+        $result = $provider->chat_completion($messages);
+
+        $this->assertEquals('{"partial":', $result->get_response());
+        $this->assertEquals('length', $result->get_finish_reason());
     }
 
     public function test_chat_completion_missing_chat_model(): void

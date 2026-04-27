@@ -75,7 +75,6 @@ class entity extends \local_mxaimanager\app\entity
             'config_json' => $this->get_config_json(),
             'timecreated' => $this->get_timecreated(),
             'timemodified' => $this->get_timemodified(),
-
         ];
     }
 }
