@@ -206,7 +206,8 @@ class mistral extends provider implements interfaces\chat_completion, interfaces
                 $json,
                 $json['choices'][0]['message']['content'],
                 $json['usage']['prompt_tokens'],
-                $json['usage']['completion_tokens']
+                $json['usage']['completion_tokens'],
+                $json['choices'][0]['finish_reason'] ?? 'stop'
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

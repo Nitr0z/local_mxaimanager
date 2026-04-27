@@ -189,7 +189,8 @@ class scaleway extends provider implements interfaces\chat_completion, interface
                 $json,
                 $json['choices'][0]['message']['content'],
                 $json['usage']['prompt_tokens'] ?? 0,
-                $json['usage']['completion_tokens'] ?? 0
+                $json['usage']['completion_tokens'] ?? 0,
+                $json['choices'][0]['finish_reason'] ?? 'stop'
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

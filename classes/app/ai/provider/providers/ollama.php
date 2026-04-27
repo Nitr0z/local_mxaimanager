@@ -167,7 +167,8 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
                 $json,
                 $json['message']['content'],
                 $json['prompt-eval-count'],
-                $json['eval-count']
+                $json['eval-count'],
+                $json['done_reason'] ?? ($json['done'] ?? true ? 'stop' : 'length')
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(
