@@ -12,7 +12,6 @@ require_once $CFG->libdir . '/formslib.php';
 
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
-use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -333,147 +332,6 @@ class nebius_test extends \base_testcase
         $this->assertEquals('{"name": "John"}', $result->get_response());
     }
 
-    public function test_create_image_success_url(): void
-    {
-        $json_config = [
-            'base_url' => 'https://api.tokenfactory.nebius.com',
-            'api_key' => 'test_key',
-            'chat_model' => 'qwen-turbo',
-            'embedding_model' => 'text-embedding-qwen-002',
-            'image_model' => 'sdxl-1.0'
-        ];
-
-        $expected_response = '{"data":[{"url":"https://example.com/image.png"}]}';
-
-        $this->mock_curl->expects($this->once())
-            ->method('post')
-            ->with(
-                'https://api.tokenfactory.nebius.com/v1/images/generations',
-                $this->callback(function ($data) {
-                    $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'sdxl-1.0' &&
-                        $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'url';
-                })
-            )
-            ->willReturn($expected_response);
-
-        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
-            $this->mock_base_factory,
-            $json_config
-        );
-
-        $result = $provider->create_image('A test image', false);
-
-        $this->assertEquals('https://example.com/image.png', $result->get_response());
-    }
-
-    public function test_create_image_success_b64(): void
-    {
-        $json_config = [
-            'base_url' => 'https://api.tokenfactory.nebius.com',
-            'api_key' => 'test_key',
-            'chat_model' => 'qwen-turbo',
-            'embedding_model' => 'text-embedding-qwen-002',
-            'image_model' => 'sdxl-1.0'
-        ];
-
-        $expected_response = '{"data":[{"b64_json":"base64encodedimage"}]}';
-
-        $this->mock_curl->expects($this->once())
-            ->method('post')
-            ->with(
-                'https://api.tokenfactory.nebius.com/v1/images/generations',
-                $this->callback(function ($data) {
-                    $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'sdxl-1.0' &&
-                        $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'b64_json';
-                })
-            )
-            ->willReturn($expected_response);
-
-        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
-            $this->mock_base_factory,
-            $json_config
-        );
-
-        $result = $provider->create_image('A test image', true);
-
-        $this->assertEquals('base64encodedimage', $result->get_response());
-    }
-
-    public function test_create_image_missing_image_model(): void
-    {
-        $json_config = [
-            'base_url' => 'https://api.tokenfactory.nebius.com',
-            'api_key' => 'test_key',
-            'chat_model' => 'qwen-turbo',
-            'embedding_model' => 'text-embedding-qwen-002'
-        ];
-
-        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
-            $this->mock_base_factory,
-            $json_config
-        );
-
-        $this->expectException(\local_mxaimanager\app\exceptions\invalid_provider_instance_configuration::class);
-        $this->expectExceptionMessage('Image model is not configured');
-
-        $provider->create_image('A test image', false);
-    }
-
-    public function test_create_image_curl_error(): void
-    {
-        $json_config = [
-            'base_url' => 'https://api.tokenfactory.nebius.com',
-            'api_key' => 'test_key',
-            'chat_model' => 'qwen-turbo',
-            'embedding_model' => 'text-embedding-qwen-002',
-            'image_model' => 'sdxl-1.0'
-        ];
-
-        $this->mock_curl->expects($this->once())
-            ->method('post')
-            ->will($this->throwException(new \Exception('Connection failed')));
-
-        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
-            $this->mock_base_factory,
-            $json_config
-        );
-
-        $this->expectException(\local_mxaimanager\app\exceptions\invalid_provider_instance_response::class);
-        $this->expectExceptionMessage('Invalid response from Nebius: Connection failed');
-
-        $provider->create_image('A test image', false);
-    }
-
-    public function test_create_image_invalid_response(): void
-    {
-        $json_config = [
-            'base_url' => 'https://api.tokenfactory.nebius.com',
-            'api_key' => 'test_key',
-            'chat_model' => 'qwen-turbo',
-            'embedding_model' => 'text-embedding-qwen-002',
-            'image_model' => 'sdxl-1.0'
-        ];
-
-        $this->mock_curl->expects($this->once())
-            ->method('post')
-            ->willReturn('invalid json');
-
-        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
-            $this->mock_base_factory,
-            $json_config
-        );
-
-        $this->expectException(\local_mxaimanager\app\exceptions\invalid_provider_instance_response::class);
-
-        $provider->create_image('A test image', false);
-    }
-
     public function test_get_embedding_success(): void
     {
         $json_config = [
@@ -590,9 +448,9 @@ class nebius_test extends \base_testcase
     {
         $mform = $this->createMock(\MoodleQuickForm::class);
 
-        // Expectations for all the element additions
-        $mform->expects($this->exactly(5))->method('addElement');
-        $mform->expects($this->exactly(5))->method('setType');
+        // Expectations for all the element additions (base_url, api_key, chat_model, embedding_model + credit_multiplier)
+        $mform->expects($this->exactly(4))->method('addElement');
+        $mform->expects($this->exactly(4))->method('setType');
         $mform->expects($this->exactly(2))->method('setDefault');
 
         $element_name_prefix = 'test_';
@@ -612,8 +470,7 @@ class nebius_test extends \base_testcase
             'prefix_base_url' => 'https://api.tokenfactory.nebius.com',
             'prefix_api_key' => 'test_key',
             'prefix_chat_model' => 'qwen-turbo',
-            'prefix_embedding_model' => 'text-embedding-qwen-002',
-            'prefix_image_model' => 'some-image-model'
+            'prefix_embedding_model' => 'text-embedding-qwen-002'
         ];
 
         $errors = \local_mxaimanager\app\ai\provider\providers\nebius::moodleform_validation(
@@ -727,25 +584,6 @@ class nebius_test extends \base_testcase
         \local_mxaimanager\app\ai\provider\providers\nebius::action_moodleform_definition(
             $mform,
             create_embedding::class,
-            $element_name_prefix
-        );
-
-        // The static method was called successfully if no exception was thrown
-        $this->assertTrue(true);
-    }
-
-    public function test_action_moodleform_definition_create_image(): void
-    {
-        $mform = $this->createMock(\MoodleQuickForm::class);
-
-        $mform->expects($this->once())->method('addElement');
-        $mform->expects($this->once())->method('setType');
-
-        $element_name_prefix = 'test_';
-
-        \local_mxaimanager\app\ai\provider\providers\nebius::action_moodleform_definition(
-            $mform,
-            create_image::class,
             $element_name_prefix
         );
 
