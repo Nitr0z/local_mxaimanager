@@ -41,16 +41,23 @@ class action_handler
      * Enforce usage limits before an AI request.
      * Non-managed/non-preconfigured providers are unlimited.
      * Managed providers (listed in managed_provider_ids) and
-     * preconfigured providers (ID < 0) are subject to quotas.
+     * preconfigured providers (ID < 0) are subject to quotas,
+     * unless the provider config explicitly sets enforce_quotas = false.
      *
      * @param int $provider_id The provider being used for this request.
+     * @param array $config_json The provider configuration.
      * @throws quota_exceeded_exception
      */
-    private function enforce_quotas(int $provider_id): void
+    private function enforce_quotas(int $provider_id, array $config_json = []): void
     {
         // Preconfigured providers (negative IDs) and managed providers are subject to quotas.
         $is_preconfigured = $provider_id < 0;
         if (!$is_preconfigured && !self::is_managed_provider($provider_id)) {
+            return;
+        }
+
+        // Allow per-provider opt-out via config_json (e.g. premium providers).
+        if (isset($config_json['enforce_quotas']) && $config_json['enforce_quotas'] === false) {
             return;
         }
 
@@ -187,7 +194,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): string {
-        $this->enforce_quotas($provider_id);
+        $this->enforce_quotas($provider_id, $config_json);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -374,7 +381,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): array {
-        $this->enforce_quotas($provider_id);
+        $this->enforce_quotas($provider_id, $config_json);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -424,7 +431,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): string {
-        $this->enforce_quotas($provider_id);
+        $this->enforce_quotas($provider_id, $config_json);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -471,7 +478,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): transcription {
-        $this->enforce_quotas($provider_id);
+        $this->enforce_quotas($provider_id, $config_json);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(
@@ -522,7 +529,7 @@ class action_handler
         int $provider_id,
         array $config_json
     ): create_speech_request {
-        $this->enforce_quotas($provider_id);
+        $this->enforce_quotas($provider_id, $config_json);
 
         // Get the provider handler.
         $handler = $this->get_provider_handler_provider_and_settings_json(

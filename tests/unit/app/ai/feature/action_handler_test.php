@@ -801,4 +801,55 @@ class action_handler_test extends base_testcase
         $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
         $this->assertEquals('OK', $result);
     }
+
+    public function test_enforce_quotas_skipped_when_config_flag_false(): void
+    {
+        // Preconfigured provider with enforce_quotas = false should skip quotas
+        // even when limits are set and exceeded.
+        set_config('managed_provider_ids', '', 'local_mxaimanager');
+        $this->set_all_quotas(daily_in: 1, daily_out: 1);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        // Return usage that exceeds quotas.
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 99999, 'used_output' => 99999]
+        );
+        $db_mock->method('insert_record')->willReturn(1);
+
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        // Provider -1 (preconfigured) with enforce_quotas=false → should pass despite exceeded quotas.
+        $config = ['enforce_quotas' => false, 'base_url' => 'https://api.test.com', 'api_key' => 'key'];
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, -1, $config);
+        $this->assertEquals('OK', $result);
+    }
+
+    public function test_enforce_quotas_applied_when_config_flag_true(): void
+    {
+        // Preconfigured provider with enforce_quotas = true should still enforce quotas.
+        set_config('managed_provider_ids', '', 'local_mxaimanager');
+        $this->set_all_quotas(daily_in: 1);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 99999, 'used_output' => 0]
+        );
+
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $config = ['enforce_quotas' => true, 'base_url' => 'https://api.test.com', 'api_key' => 'key'];
+
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, -1, $config);
+    }
 }
