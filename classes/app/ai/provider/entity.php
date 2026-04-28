@@ -65,6 +65,16 @@ class entity extends \local_mxaimanager\app\entity
         return $this;
     }
 
+    public function get_is_preconfigured(): bool
+    {
+        return $this->record['is_preconfigured'] ?? false;
+    }
+
+    public function set_is_preconfigured(bool $value): self
+    {
+        $this->record['is_preconfigured'] = $value;
+        return $this;
+    }
 
     public function to_array(): array
     {
@@ -75,6 +85,7 @@ class entity extends \local_mxaimanager\app\entity
             'config_json' => $this->get_config_json(),
             'timecreated' => $this->get_timecreated(),
             'timemodified' => $this->get_timemodified(),
+            'is_preconfigured' => $this->get_is_preconfigured(),
         ];
     }
 }

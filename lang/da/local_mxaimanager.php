@@ -88,6 +88,7 @@ $string['you_have_not_yet_configured_any_providers'] = 'Du har endnu ikke konfig
 $string['you_have_not_yet_configured_default_providers'] = 'Du har endnu ikke konfigureret standard provider-instanser for alle handlinger. Konfigurer venligst standard provider-instanser <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">her</a>.';
 $string['no_available_providers'] = 'Ingen tilgængelige provider-instanser';
 $string['this_provider_is_managed_no_modify'] = 'Denne provider instans er administreret og kan ikke ændres.';
+$string['this_provider_is_preconfigured_no_modify'] = 'Denne provider instans er forudkonfigureret og kan ikke ændres.';
 
 // Settings
 $string['settings:manage_page'] = 'Administrer AI Indstillinger';

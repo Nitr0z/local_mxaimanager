@@ -205,6 +205,9 @@ class manage_providers implements interfaces\view
 
         $provider_entity = $this->base_factory->ai()->provider()->repository()->get_by_id($provider_id);
 
+        if ($provider_entity->get_is_preconfigured()) {
+            throw new \Exception('Preconfigured providers cannot be edited.');
+        }
         if (\local_mxaimanager\app\ai\feature\action_handler::is_managed_provider($provider_id)) {
             throw new \Exception('Managed providers cannot be edited.');
         }
@@ -267,6 +270,9 @@ class manage_providers implements interfaces\view
         $provider_id = required_param('id', PARAM_INT);
         $this->url->param('id', $provider_id);
 
+        if ($provider_id < 0) {
+            throw new \Exception('Preconfigured providers cannot be deleted.');
+        }
         if (\local_mxaimanager\app\ai\feature\action_handler::is_managed_provider($provider_id)) {
             throw new \Exception('Managed providers cannot be deleted.');
         }

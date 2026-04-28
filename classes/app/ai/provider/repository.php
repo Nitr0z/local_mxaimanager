@@ -9,8 +9,12 @@ defined('MOODLE_INTERNAL') || die();
 
 
 /**
- * Provider repository — all providers are stored in the database.
- * Managed providers are locked via managed_provider_ids setting (edit/delete blocked in controller).
+ * Provider repository — supports both database-backed and preconfigured providers.
+ *
+ * Preconfigured providers come from $CFG->local_mxaimanager_preconfigured_providers
+ * and use negative IDs (cannot be edited/deleted).
+ *
+ * Managed providers are regular DB providers locked via the managed_provider_ids setting.
  *
  * @extends \local_mxaimanager\app\repository<entity>
  */
@@ -21,8 +25,36 @@ class repository extends \local_mxaimanager\app\repository
         return 'local_mxaimanager_providers';
     }
 
+    private function get_preconfigured_providers(): \local_mxaimanager\app\collection
+    {
+        global $CFG;
+
+        $preconfigured = $CFG->local_mxaimanager_preconfigured_providers ?? [];
+        $entities = [];
+        foreach ($preconfigured as $index => $config) {
+            $record = (array) $config;
+            $config_json = array_diff_key($record, array_flip(['name', 'classname']));
+            $record['id'] = -($index + 1);
+            $record['config_json'] = json_encode($config_json);
+            $record['is_preconfigured'] = true;
+            $record['timecreated'] = null;
+            $record['timemodified'] = null;
+            $entities[] = $this->base_factory->ai()->provider()->entity($record);
+        }
+        return $this->base_factory->collection($entities);
+    }
+
     public function get_by_id(int $id): entity
     {
+        if ($id < 0) {
+            $preconfigured = $this->get_preconfigured_providers();
+            foreach ($preconfigured as $entity) {
+                if ($entity->get_id() === $id) {
+                    return $entity;
+                }
+            }
+            throw new \dml_missing_record_exception($this->get_table());
+        }
         return $this->base_factory->ai()->provider()->entity(
             (array)$this->db->get_record($this->get_table(), ['id' => $id], strictness: MUST_EXIST)
         );
@@ -30,6 +62,12 @@ class repository extends \local_mxaimanager\app\repository
 
     public function get_by_name(string $name): entity
     {
+        $preconfigured = $this->get_preconfigured_providers();
+        foreach ($preconfigured as $entity) {
+            if ($entity->get_name() === $name) {
+                return $entity;
+            }
+        }
         return $this->base_factory->ai()->provider()->entity(
             (array)$this->db->get_record($this->get_table(), ['name' => $name], strictness: MUST_EXIST)
         );
@@ -37,7 +75,7 @@ class repository extends \local_mxaimanager\app\repository
 
     public function get_all_by_classname(string $classname): \local_mxaimanager\app\collection
     {
-        return $this->base_factory->collection(
+        $db_entities = $this->base_factory->collection(
             array_map(
                 function (object $record) {
                     return $this->base_factory->ai()->provider()->entity((array)$record);
@@ -45,27 +83,34 @@ class repository extends \local_mxaimanager\app\repository
                 $this->db->get_records($this->get_table(), ['classname' => $classname])
             )
         );
+        $preconfigured_entities = $this->get_preconfigured_providers()->filter(static function (\local_mxaimanager\app\ai\provider\entity $entity) use ($classname) {
+            return $entity->get_classname() === $classname;
+        });
+        return $db_entities->merge($preconfigured_entities);
     }
 
     public function get_all_by_classnames(array $classnames): \local_mxaimanager\app\collection
     {
-        if (empty($classnames)) {
-            return $this->base_factory->collection();
+        $db_entities = $this->base_factory->collection();
+        if (!empty($classnames)) {
+            [$in_sql, $params] = $this->db->get_in_or_equal($classnames);
+
+            $sql = "SELECT *
+                      FROM {{$this->get_table()}}
+                     WHERE classname $in_sql";
+            $db_entities = $this->base_factory->collection(
+                array_map(
+                    function (object $record) {
+                        return $this->base_factory->ai()->provider()->entity((array)$record);
+                    },
+                    $this->db->get_records_sql($sql, $params)
+                )
+            );
         }
-
-        [$in_sql, $params] = $this->db->get_in_or_equal($classnames);
-
-        $sql = "SELECT *
-                  FROM {{$this->get_table()}}
-                 WHERE classname $in_sql";
-        return $this->base_factory->collection(
-            array_map(
-                function (object $record) {
-                    return $this->base_factory->ai()->provider()->entity((array)$record);
-                },
-                $this->db->get_records_sql($sql, $params)
-            )
-        );
+        $preconfigured_entities = $this->get_preconfigured_providers()->filter(static function (\local_mxaimanager\app\ai\provider\entity $entity) use ($classnames) {
+            return in_array($entity->get_classname(), $classnames, true);
+        });
+        return $db_entities->merge($preconfigured_entities);
     }
 
     /**
@@ -74,7 +119,7 @@ class repository extends \local_mxaimanager\app\repository
      */
     public function get_all(): \local_mxaimanager\app\collection
     {
-        return $this->base_factory->collection(
+        $db_entities = $this->base_factory->collection(
             array_map(
                 function (object $record) {
                     return $this->base_factory->ai()->provider()->entity((array)$record);
@@ -82,5 +127,31 @@ class repository extends \local_mxaimanager\app\repository
                 $this->db->get_records($this->get_table())
             )
         );
+        $preconfigured_entities = $this->get_preconfigured_providers();
+        return $db_entities->merge($preconfigured_entities);
+    }
+
+    public function insert(entity|\local_mxaimanager\app\entity $entity): int
+    {
+        if ($entity->get_is_preconfigured()) {
+            throw new \coding_exception('Cannot insert preconfigured providers.');
+        }
+        return parent::insert($entity);
+    }
+
+    public function update(entity|\local_mxaimanager\app\entity $entity): bool
+    {
+        if ($entity->get_is_preconfigured()) {
+            throw new \coding_exception('Cannot update preconfigured providers.');
+        }
+        return parent::update($entity);
+    }
+
+    public function delete(int $id): bool
+    {
+        if ($id < 0) {
+            throw new \coding_exception('Cannot delete preconfigured providers.');
+        }
+        return parent::delete($id);
     }
 }

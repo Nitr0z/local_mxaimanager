@@ -33,16 +33,18 @@ class action_handler
 
     /**
      * Enforce usage limits before an AI request.
-     * Non-managed providers are unlimited.
-     * Managed providers (listed in managed_provider_ids) are subject to quotas.
+     * Non-managed/non-preconfigured providers are unlimited.
+     * Managed providers (listed in managed_provider_ids) and
+     * preconfigured providers (ID < 0) are subject to quotas.
      *
      * @param int $provider_id The provider being used for this request.
      * @throws quota_exceeded_exception
      */
     private function enforce_quotas(int $provider_id): void
     {
-        // Only managed providers are subject to quotas.
-        if (!self::is_managed_provider($provider_id)) {
+        // Preconfigured providers (negative IDs) and managed providers are subject to quotas.
+        $is_preconfigured = $provider_id < 0;
+        if (!$is_preconfigured && !self::is_managed_provider($provider_id)) {
             return;
         }
 

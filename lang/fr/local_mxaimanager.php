@@ -89,6 +89,7 @@ $string['you_have_not_yet_configured_any_providers'] = 'Vous n\'avez pas encore 
 $string['you_have_not_yet_configured_default_providers'] = 'Vous n\'avez pas encore configuré les fournisseurs par défaut pour toutes les actions. Veuillez les configurer <a href="/local/mxaimanager/view.php?view=manage_providers&action=browse">ici</a>.';
 $string['no_available_providers'] = 'Aucune instance de fournisseur disponible';
 $string['this_provider_is_managed_no_modify'] = 'Cette instance de fournisseur est gérée et ne peut pas être modifiée.';
+$string['this_provider_is_preconfigured_no_modify'] = 'Cette instance de fournisseur est préconfigurée et ne peut pas être modifiée.';
 
 // Settings
 $string['settings:manage_page'] = 'Gérer les paramètres IA';

@@ -425,4 +425,70 @@ class action_handler_test extends base_testcase
         $this->assertTrue(action_handler::is_managed_provider(5));
         $this->assertFalse(action_handler::is_managed_provider(0));
     }
+
+    // --- check_token_quotas tests ---
+
+    public function test_enforce_quotas_skips_non_managed_non_preconfigured(): void
+    {
+        // Provider ID > 0 and not in managed list → should NOT throw.
+        set_config('managed_provider_ids', '99', 'local_mxaimanager');
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new \local_mxaimanager\app\ai\provider\chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        // Provider 1 is NOT managed (only 99 is) → quotas should be skipped.
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+        $this->assertEquals('OK', $result);
+    }
+
+    public function test_enforce_quotas_triggers_for_preconfigured_provider(): void
+    {
+        // Provider ID < 0 (preconfigured) → should trigger quota enforcement.
+        set_config('managed_provider_ids', '', 'local_mxaimanager');
+        set_config('quota_display_mode', 'tokens', 'local_mxaimanager');
+        // Set quotas to 0 (unlimited) to avoid exception.
+        set_config('daily_input_quota', '0', 'local_mxaimanager');
+        set_config('daily_output_quota', '0', 'local_mxaimanager');
+        set_config('weekly_input_quota', '0', 'local_mxaimanager');
+        set_config('weekly_output_quota', '0', 'local_mxaimanager');
+        set_config('monthly_input_quota', '0', 'local_mxaimanager');
+        set_config('monthly_output_quota', '0', 'local_mxaimanager');
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $base_factory_mock->method('db')->willReturn($db_mock);
+
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new \local_mxaimanager\app\ai\provider\chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        // Provider -1 (preconfigured) → quotas should apply, but all are 0 (unlimited) → no exception.
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, -1, []);
+        $this->assertEquals('OK', $result);
+    }
 }
+

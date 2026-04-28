@@ -69,6 +69,19 @@ class provider_resolver
             )->get_by_action_interface($action_interface);
             return $default_action_provider->get_provider_id();
         } catch (\dml_missing_record_exception $e) {
+            // Check for preconfigured default providers.
+            $preconfigured_providers = $this->base_factory->ai()->provider()->repository()->get_all()->filter(static function (\local_mxaimanager\app\ai\provider\entity $provider) use ($action_interface) {
+                if (!$provider->get_is_preconfigured()) {
+                    return false;
+                }
+                $config = json_decode($provider->get_config_json(), true, 512, JSON_THROW_ON_ERROR);
+                $supports = in_array($action_interface, class_implements($provider->get_classname()), true);
+                $is_default = isset($config['default_unless_explicitly_set']) && $config['default_unless_explicitly_set'];
+                return $supports && $is_default;
+            });
+            if (!$preconfigured_providers->empty()) {
+                return $preconfigured_providers->first()->get_id();
+            }
             throw new no_provider_instance_configured(
                 "No default provider configured for action interface {$action_interface}", previous: $e
             );
