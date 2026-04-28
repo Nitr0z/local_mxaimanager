@@ -226,14 +226,15 @@ Usage logs store: feature_id, provider_id, request/response JSON, token counts, 
 
 ## Changelog
 
+* **1.7.0 (2026042800)**
+    - Restored preconfigured provider system (negative IDs from `$CFG`).
+    - Preconfigured and managed providers now coexist.
+    - Added Scaleway provider tests and check_token_quotas tests.
+    - Merged upstream finish_reason/continuation fixes.
 * **1.6.0 (2026042303)**
-    - **BREAKING**: Removed Freemium provider class and preconfigured provider system (negative IDs).
     - All providers are now database-backed. Use `managed_provider_ids` to lock providers.
     - Renamed settings page from "Freemium Provider" to "Billing & Quotas".
-    - Simplified `provider_resolver` — no more auto-fallback to preconfigured defaults.
-    - Simplified `action_handler` — quota enforcement based solely on `managed_provider_ids`.
     - Updated `quota_helper` — removed `is_using_preconfigured()` check.
-    - Renamed `is_preconfigured` → `is_managed` in templates.
     - Removed 15 freemium-specific lang strings across EN/FR/DA.
 * **1.5.0 (2026042301)**
     - **Prepaid Credit Wallet**: Ledger-based billing with per-recharge expiry and soft-disable toggle.
@@ -252,7 +253,8 @@ Usage logs store: feature_id, provider_id, request/response JSON, token counts, 
 * **1.3.0 (2026032700)**
     - Daily/weekly/monthly token quotas with period-based enforcement.
     - Quota display bars in manage pages.
-* **1.0.5 (2026031600)**
+* **1.0.5 (2026040700)**
+    - Removed support for text-to-image generation in nebius AI provider.
     - Model fields now use autocomplete dropdowns with known models per provider.
     - Updated OpenAI/Mistral model lists.
     - Added French translation.

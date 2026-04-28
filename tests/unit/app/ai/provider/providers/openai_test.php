@@ -171,6 +171,33 @@ class openai_test extends \base_testcase
         $this->assertEquals('length', $result->get_finish_reason());
     }
 
+    public function test_chat_completion_finish_reason_defaults_to_stop(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002'
+        ];
+
+        // Response without finish_reason field
+        $expected_response = '{"choices":[{"message":{"content":"Hello"}}], "usage":{"prompt_tokens": 5, "completion_tokens": 5}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $messages = [['role' => 'user', 'content' => 'Hello']];
+        $result = $provider->chat_completion($messages);
+
+        $this->assertEquals('stop', $result->get_finish_reason());
+    }
+
     public function test_chat_completion_missing_chat_model(): void
     {
         $json_config = [

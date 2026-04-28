@@ -44,28 +44,32 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
-    private const CHAT_MODELS = [
-        'meta-llama/Meta-Llama-3.1-70B-Instruct', 'meta-llama/Meta-Llama-3.1-8B-Instruct',
-        'Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3',
-        'mistralai/Mistral-Nemo-Instruct-2407',
-    ];
-
-    private const EMBEDDING_MODELS = [
-        'BAAI/bge-en-icl', 'intfloat/multilingual-e5-large-instruct', 'BAAI/bge-m3',
-    ];
-
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        self::add_model_field($mform, $element_name_prefix, 'chat_model',
-            'default_chat_model', 'nebius_chat_model',
-            interfaces\chat_completion::class, self::CHAT_MODELS);
+        $mform->addElement(
+            'text',
+            "{$element_name_prefix}chat_model",
+            get_string('default_chat_model', 'local_mxaimanager'),
+            [
+                'action' => interfaces\chat_completion::class
+            ]
+        );
+        $mform->setType("{$element_name_prefix}chat_model", PARAM_TEXT);
+        $mform->addHelpButton("{$element_name_prefix}chat_model", 'nebius_chat_model', 'local_mxaimanager');
     }
 
     private static function add_embedding_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
-        self::add_model_field($mform, $element_name_prefix, 'embedding_model',
-            'default_embedding_model', 'nebius_embedding_model',
-            interfaces\create_embedding::class, self::EMBEDDING_MODELS);
+        $mform->addElement(
+            'text',
+            "{$element_name_prefix}embedding_model",
+            get_string('default_embedding_model', 'local_mxaimanager'),
+            [
+                'action' => interfaces\create_embedding::class
+            ]
+        );
+        $mform->setType("{$element_name_prefix}embedding_model", PARAM_TEXT);
+        $mform->addHelpButton("{$element_name_prefix}embedding_model", 'nebius_embedding_model', 'local_mxaimanager');
     }
 
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void
@@ -85,9 +89,6 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
 
         // Add embedding model field
         self::add_embedding_model_field($mform, $element_name_prefix);
-
-        // Add credit multiplier field.
-        self::add_credit_multiplier_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array
@@ -167,7 +168,14 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
                 json_encode($payload, JSON_THROW_ON_ERROR)
             );
 
-            $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+            try {
+                $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable $t) {
+                throw new \Exception(
+                    'Failed to decode Nebius response as JSON. Nebius response: ' . $response,
+                    previous: $t
+                );
+            }
 
             if (!isset($json['choices'][0]['message']['content'])) {
                 throw new \Exception('Missing content in Nebius response. Nebius response: ' . $response);

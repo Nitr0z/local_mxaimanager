@@ -187,13 +187,13 @@ class action_handler_test extends base_testcase
         $handler->create_embedding(new entity(), 'Hello world', 256, 4, ['model' => 'test']);
     }
 
-    // --- Continuation and markdown stripping tests (restored from upstream) ---
-
     public function test_chat_completion_continuation_with_json_mode(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -201,27 +201,36 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        // First call: truncated response.
-        // Second call: continuation completes.
+        // First call returns truncated response (finish_reason = 'length')
+        // Second call returns completed response (finish_reason = 'stop')
         $handler_mock->expects($this->exactly(2))
             ->method('chat_completion')
             ->willReturnOnConsecutiveCalls(
-                new chat_completion_request([], [], '{"partial":', 10, 5, 'length'),
-                new chat_completion_request([], [], '"value"}', 15, 3, 'stop')
+                new chat_completion_request([], [], '{"partial":', 5, 5, 'length'),
+                new chat_completion_request([], [], '"value"}', 10, 3, 'stop')
             );
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+        // Execute test
+        $messages = [
+            new message('user', 'Generate JSON'),
+        ];
 
+        $result = $handler->chat_completion(new entity(), $messages, true, null, 1, ['api_key' => 'test']);
+
+        // Assert the concatenated response
         $this->assertEquals('{"partial":"value"}', $result);
     }
 
     public function test_chat_completion_no_continuation_for_non_json_mode(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -229,23 +238,34 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        // Even though finish_reason is 'length', non-JSON mode should NOT continue.
+        // Only one call should be made - no continuation for non-JSON mode
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], 'partial text', 10, 5, 'length'));
+            ->willReturn(
+                new chat_completion_request([], [], 'Truncated text response...', 5, 5, 'length')
+            );
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+        // Execute test with json_mode=false and json_schema=null
+        $messages = [
+            new message('user', 'Generate text'),
+        ];
 
-        $this->assertEquals('partial text', $result);
+        $result = $handler->chat_completion(new entity(), $messages, false, null, 1, ['api_key' => 'test']);
+
+        // Assert only the truncated response is returned (no continuation)
+        $this->assertEquals('Truncated text response...', $result);
     }
 
     public function test_chat_completion_continuation_max_retries_respected(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -253,25 +273,43 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        // All calls return truncated — should stop after MAX_CONTINUATION_ATTEMPTS + 1 (initial).
-        $handler_mock->expects($this->exactly(action_handler::MAX_CONTINUATION_ATTEMPTS + 1))
+        // All calls return finish_reason = 'length' (never completes).
+        // Should be 1 initial call + MAX_CONTINUATION_ATTEMPTS continuation calls.
+        $total_calls = 1 + action_handler::MAX_CONTINUATION_ATTEMPTS;
+        $responses = [];
+        for ($i = 0; $i < $total_calls; $i++) {
+            $responses[] = new chat_completion_request([], [], 'part' . $i, 5, 5, 'length');
+        }
+
+        $handler_mock->expects($this->exactly($total_calls))
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], 'chunk', 5, 3, 'length'));
+            ->willReturnOnConsecutiveCalls(...$responses);
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+        // Execute test
+        $messages = [
+            new message('user', 'Generate JSON'),
+        ];
 
-        // Initial + MAX_CONTINUATION_ATTEMPTS chunks.
-        $expected = str_repeat('chunk', action_handler::MAX_CONTINUATION_ATTEMPTS + 1);
+        $result = $handler->chat_completion(new entity(), $messages, true, null, 1, ['api_key' => 'test']);
+
+        // Assert the accumulated response contains all parts
+        $expected = '';
+        for ($i = 0; $i < $total_calls; $i++) {
+            $expected .= 'part' . $i;
+        }
         $this->assertEquals($expected, $result);
     }
 
     public function test_chat_completion_continuation_with_json_schema(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -279,28 +317,43 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        $schema = ['type' => 'object', 'properties' => ['name' => ['type' => 'string']]];
+        $json_schema = [
+            'type' => 'object',
+            'properties' => [
+                'name' => ['type' => 'string'],
+                'age' => ['type' => 'integer']
+            ]
+        ];
 
+        // First call returns truncated response, second returns completion
         $handler_mock->expects($this->exactly(2))
             ->method('chat_completion')
             ->willReturnOnConsecutiveCalls(
-                new chat_completion_request([], [], '{"name":', 10, 5, 'length'),
-                new chat_completion_request([], [], '"Alice"}', 15, 3, 'stop')
+                new chat_completion_request([], [], '{"name":"John",', 5, 5, 'length'),
+                new chat_completion_request([], [], '"age":30}', 10, 3, 'stop')
             );
 
-        // json_mode=false but json_schema is set → implies JSON mode for continuation.
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, $schema, 1, []);
+        // Execute test with json_mode=false but json_schema set
+        $messages = [
+            new message('user', 'Generate JSON'),
+        ];
 
-        $this->assertEquals('{"name":"Alice"}', $result);
+        $result = $handler->chat_completion(new entity(), $messages, false, $json_schema, 1, ['api_key' => 'test']);
+
+        // Assert the concatenated response
+        $this->assertEquals('{"name":"John","age":30}', $result);
     }
 
     public function test_chat_completion_strips_markdown_json_wrapper_with_json_mode(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -308,23 +361,30 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        $wrapped = "```json\n{\"key\": \"value\"}\n```";
+        // Response wrapped in markdown code block
+        $wrapped_response = "```json\n{\"key\":\"value\"}\n```";
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+            ->willReturn(new chat_completion_request([], [], $wrapped_response, 5, 5));
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+        // Execute test with json_mode=true
+        $messages = [new message('user', 'Generate JSON')];
+        $result = $handler->chat_completion(new entity(), $messages, true, null, 1, ['api_key' => 'test']);
 
-        $this->assertEquals('{"key": "value"}', $result);
+        // Assert the markdown wrapper was stripped
+        $this->assertEquals('{"key":"value"}', $result);
     }
 
     public function test_chat_completion_strips_markdown_wrapper_without_language_tag(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -332,23 +392,31 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        $wrapped = "```\n{\"key\": \"value\"}\n```";
+        // Response wrapped in code block without language tag
+        $wrapped_response = "```\n{\"key\":\"value\"}\n```";
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+            ->willReturn(new chat_completion_request([], [], $wrapped_response, 5, 5));
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+        // Execute test with json_schema set
+        $json_schema = ['type' => 'object', 'properties' => ['key' => ['type' => 'string']]];
+        $messages = [new message('user', 'Generate JSON')];
+        $result = $handler->chat_completion(new entity(), $messages, false, $json_schema, 1, ['api_key' => 'test']);
 
-        $this->assertEquals('{"key": "value"}', $result);
+        // Assert the markdown wrapper was stripped
+        $this->assertEquals('{"key":"value"}', $result);
     }
 
     public function test_chat_completion_does_not_strip_markdown_for_non_json_mode(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -356,24 +424,30 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        $wrapped = "```json\n{\"key\": \"value\"}\n```";
+        // Response wrapped in markdown code block
+        $wrapped_response = "```json\n{\"key\":\"value\"}\n```";
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], $wrapped, 10, 5, 'stop'));
+            ->willReturn(new chat_completion_request([], [], $wrapped_response, 5, 5));
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+        // Execute test with json_mode=false and json_schema=null (non-JSON mode)
+        $messages = [new message('user', 'Show me some code')];
+        $result = $handler->chat_completion(new entity(), $messages, false, null, 1, ['api_key' => 'test']);
 
-        // Non-JSON mode: markdown wrapper should NOT be stripped.
-        $this->assertEquals($wrapped, $result);
+        // Assert the response is returned as-is (no stripping)
+        $this->assertEquals($wrapped_response, $result);
     }
 
     public function test_chat_completion_returns_clean_json_unchanged(): void
     {
+        // Create minimal mocks needed
         $base_factory_mock = $this->createMock(base_factory::class);
         $handler_mock = $this->createMock(chat_completion::class);
 
+        // Mock the protected provider instantiation method
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
@@ -381,16 +455,56 @@ class action_handler_test extends base_testcase
 
         $handler->expects($this->once())
             ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
             ->willReturn($handler_mock);
 
-        $clean_json = '{"key": "value"}';
+        // Response is already clean JSON (no wrapper)
+        $clean_response = '{"key":"value"}';
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], $clean_json, 10, 5, 'stop'));
+            ->willReturn(new chat_completion_request([], [], $clean_response, 5, 5));
 
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], true, null, 1, []);
+        // Execute test with json_mode=true
+        $messages = [new message('user', 'Generate JSON')];
+        $result = $handler->chat_completion(new entity(), $messages, true, null, 1, ['api_key' => 'test']);
 
-        $this->assertEquals($clean_json, $result);
+        // Assert clean JSON is returned as-is
+        $this->assertEquals('{"key":"value"}', $result);
+    }
+
+    public function test_chat_completion_strips_markdown_wrapper_from_continuation_response(): void
+    {
+        // Create minimal mocks needed
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        // Mock the protected provider instantiation method
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->with(1, ['api_key' => 'test'])
+            ->willReturn($handler_mock);
+
+        // First call returns truncated response wrapped in markdown, second completes it
+        // In practice, only the single-response path would be wrapped, but let's test
+        // that the continuation path also strips wrappers from the final concatenated result.
+        $handler_mock->expects($this->exactly(2))
+            ->method('chat_completion')
+            ->willReturnOnConsecutiveCalls(
+                new chat_completion_request([], [], '{"partial":', 5, 5, 'length'),
+                new chat_completion_request([], [], '"value"}', 10, 3, 'stop')
+            );
+
+        // Execute test with json_mode=true
+        $messages = [new message('user', 'Generate JSON')];
+        $result = $handler->chat_completion(new entity(), $messages, true, null, 1, ['api_key' => 'test']);
+
+        // Assert concatenated response (no wrapper to strip, but stripping logic should not break it)
+        $this->assertEquals('{"partial":"value"}', $result);
     }
 
     // --- Managed provider tests ---
@@ -447,7 +561,7 @@ class action_handler_test extends base_testcase
 
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new \local_mxaimanager\app\ai\provider\chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
 
         // Provider 1 is NOT managed (only 99 is) → quotas should be skipped.
         $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
@@ -484,11 +598,10 @@ class action_handler_test extends base_testcase
 
         $handler_mock->expects($this->once())
             ->method('chat_completion')
-            ->willReturn(new \local_mxaimanager\app\ai\provider\chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
 
         // Provider -1 (preconfigured) → quotas should apply, but all are 0 (unlimited) → no exception.
         $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, -1, []);
         $this->assertEquals('OK', $result);
     }
 }
-

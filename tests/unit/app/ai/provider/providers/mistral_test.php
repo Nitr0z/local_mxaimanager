@@ -142,6 +142,33 @@ class mistral_test extends \base_testcase
         $this->assertEquals('stop', $result->get_finish_reason());
     }
 
+    public function test_chat_completion_finish_reason_length(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.mistral.ai',
+            'api_key' => 'test_key',
+            'chat_model' => 'mistral-tiny',
+            'embedding_model' => 'mistral-embed'
+        ];
+
+        $expected_response = '{"choices":[{"message":{"content":"{\\"partial\\":"},"finish_reason":"length"}], "usage":{"prompt_tokens": 5, "completion_tokens": 10}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\mistral(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $messages = [['role' => 'user', 'content' => 'Hello']];
+        $result = $provider->chat_completion($messages);
+
+        $this->assertEquals('{"partial":', $result->get_response());
+        $this->assertEquals('length', $result->get_finish_reason());
+    }
+
     public function test_chat_completion_missing_chat_model(): void
     {
         $json_config = [

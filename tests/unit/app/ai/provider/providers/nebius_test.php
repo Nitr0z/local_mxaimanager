@@ -12,7 +12,6 @@ require_once $CFG->libdir . '/formslib.php';
 
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
-use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class nebius_test extends \base_testcase
@@ -138,6 +137,60 @@ class nebius_test extends \base_testcase
         $result = $provider->chat_completion($messages);
 
         $this->assertEquals('Hello, world!', $result->get_response());
+        $this->assertEquals('stop', $result->get_finish_reason());
+    }
+
+    public function test_chat_completion_finish_reason_length(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.tokenfactory.nebius.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'qwen-turbo',
+            'embedding_model' => 'text-embedding-qwen-002'
+        ];
+
+        $expected_response = '{"choices":[{"message":{"content":"{\\"partial\\":"},"finish_reason":"length"}], "usage":{"prompt_tokens": 5, "completion_tokens": 10}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $messages = [['role' => 'user', 'content' => 'Hello']];
+        $result = $provider->chat_completion($messages);
+
+        $this->assertEquals('{"partial":', $result->get_response());
+        $this->assertEquals('length', $result->get_finish_reason());
+    }
+
+    public function test_chat_completion_finish_reason_defaults_to_stop(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.tokenfactory.nebius.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'qwen-turbo',
+            'embedding_model' => 'text-embedding-qwen-002'
+        ];
+
+        // Response without finish_reason field
+        $expected_response = '{"choices":[{"message":{"content":"Hello"}}], "usage":{"prompt_tokens": 5, "completion_tokens": 5}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\nebius(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $messages = [['role' => 'user', 'content' => 'Hello']];
+        $result = $provider->chat_completion($messages);
+
         $this->assertEquals('stop', $result->get_finish_reason());
     }
 
@@ -448,7 +501,7 @@ class nebius_test extends \base_testcase
     {
         $mform = $this->createMock(\MoodleQuickForm::class);
 
-        // Expectations for all the element additions (base_url, api_key, chat_model, embedding_model + credit_multiplier)
+        // Expectations for all the element additions
         $mform->expects($this->exactly(4))->method('addElement');
         $mform->expects($this->exactly(4))->method('setType');
         $mform->expects($this->exactly(2))->method('setDefault');
@@ -470,7 +523,7 @@ class nebius_test extends \base_testcase
             'prefix_base_url' => 'https://api.tokenfactory.nebius.com',
             'prefix_api_key' => 'test_key',
             'prefix_chat_model' => 'qwen-turbo',
-            'prefix_embedding_model' => 'text-embedding-qwen-002'
+            'prefix_embedding_model' => 'text-embedding-qwen-002',
         ];
 
         $errors = \local_mxaimanager\app\ai\provider\providers\nebius::moodleform_validation(
