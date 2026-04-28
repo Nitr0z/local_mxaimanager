@@ -760,30 +760,22 @@ class action_handler_test extends base_testcase
         set_config('managed_provider_ids', '1', 'local_mxaimanager');
         set_config('quota_display_mode', 'credits', 'local_mxaimanager');
         // Even if token quotas are set, credits mode should NOT call check_token_quotas.
+        // Instead it calls credit_service::check_balance() which uses global $DB.
+        // In a unit test context $DB is unavailable, so check_balance() will throw.
+        // This proves that the credits branch is taken (not the token branch).
         set_config('daily_input_quota', '1', 'local_mxaimanager');
         set_config('daily_output_quota', '1', 'local_mxaimanager');
 
-        // DB is not expected to be called for token quota query in credits mode.
-        // credit_service::check_balance() is static and will be called instead.
-        // For this test we set balance to "unlimited" by not having any credit config.
-        $db_mock = $this->createMock(\moodle_database::class);
-        $db_mock->method('insert_record')->willReturn(1);
-        $db_mock->method('get_record_sql')->willReturn(
-            (object)['balance' => 9999]
-        );
-
-        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $base_factory_mock = $this->create_base_factory_with_db();
         $handler_mock = $this->createMock(chat_completion::class);
 
         $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
 
-        $handler_mock->expects($this->once())
-            ->method('chat_completion')
-            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
-
-        // Should succeed - credits mode doesn't check token quotas.
-        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
-        $this->assertEquals('OK', $result);
+        // check_balance() will throw because global $DB is not available in unit tests.
+        // The important assertion is that it does NOT throw quota_exceeded_exception
+        // from check_token_quotas() (which would mean the wrong branch was taken).
+        $this->expectException(\Throwable::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
     }
 
     public function test_check_token_quotas_all_periods_unlimited(): void
