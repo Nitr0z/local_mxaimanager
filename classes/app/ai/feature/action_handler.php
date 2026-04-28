@@ -206,7 +206,8 @@ class action_handler
         $chat_completion_request = $handler->chat_completion($messages, $json_mode, $json_schema);
 
         // Log the request and response.
-        $this->log_usage($feature, $chat_completion_request);
+        $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
+        $this->log_usage($feature, $chat_completion_request, $credit_multiplier);
 
         // If the response was truncated (finish_reason = 'length') and we are in JSON mode,
         // continue fetching until we get a complete response or hit the max attempts.
@@ -218,7 +219,8 @@ class action_handler
                 $messages,
                 $json_mode,
                 $json_schema,
-                $chat_completion_request
+                $chat_completion_request,
+                $credit_multiplier
             );
             return $this->strip_markdown_json_wrapper($response);
         }
@@ -238,6 +240,7 @@ class action_handler
      * @param bool $json_mode
      * @param array|null $json_schema
      * @param \local_mxaimanager\app\ai\provider\chat_completion_request $initial_request The first (truncated) response.
+     * @param float $credit_multiplier Provider credit multiplier.
      * @return string The concatenated full response content.
      * @throws invalid_provider_instance_response
      */
@@ -247,7 +250,8 @@ class action_handler
         array $messages,
         bool $json_mode,
         ?array $json_schema,
-        \local_mxaimanager\app\ai\provider\chat_completion_request $initial_request
+        \local_mxaimanager\app\ai\provider\chat_completion_request $initial_request,
+        float $credit_multiplier = 1.0
     ): string {
         $accumulated_response = $initial_request->get_response();
         $last_request = $initial_request;
@@ -264,7 +268,7 @@ class action_handler
             $last_request = $handler->chat_completion($messages, $json_mode, $json_schema);
 
             // Log each continuation call individually for accurate token tracking.
-            $this->log_usage($feature, $last_request);
+            $this->log_usage($feature, $last_request, $credit_multiplier);
 
             // Accumulate the response content.
             $accumulated_response .= $last_request->get_response();
@@ -283,17 +287,20 @@ class action_handler
      *
      * @param entity $feature
      * @param \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request
+     * @param float $credit_multiplier Provider credit multiplier.
      */
     private function log_usage(
         entity $feature,
-        \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request
+        \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request,
+        float $credit_multiplier = 1.0
     ): void {
         $this->log_usage_raw(
             $feature->get_id(),
             $chat_completion_request->get_request_json(),
             $chat_completion_request->get_response_json(),
             $chat_completion_request->get_input_tokens(),
-            $chat_completion_request->get_output_tokens()
+            $chat_completion_request->get_output_tokens(),
+            $credit_multiplier
         );
     }
 
@@ -305,20 +312,25 @@ class action_handler
      * @param mixed $response_json
      * @param int $input_tokens
      * @param int $output_tokens
+     * @param float $credit_multiplier Provider credit multiplier for credit cost calculation.
      */
     private function log_usage_raw(
         ?int $feature_id,
         array $request_json,
         mixed $response_json,
         int $input_tokens,
-        int $output_tokens
+        int $output_tokens,
+        float $credit_multiplier = 1.0
     ): void {
+        $credits_used = credit_service::calculate_credits($input_tokens, $output_tokens, $credit_multiplier);
+
         $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
             'feature_id' => $feature_id ?? 0,
             'request_json' => json_encode($request_json, JSON_THROW_ON_ERROR),
             'response_json' => json_encode($response_json, JSON_THROW_ON_ERROR),
             'input_tokens' => $input_tokens,
             'output_tokens' => $output_tokens,
+            'credits_used' => $credits_used,
             'session_id' => session_id(),
             'user_id' => $this->base_factory->user()->id,
             'timecreated' => time(),
@@ -381,12 +393,14 @@ class action_handler
         $create_embedding_request = $handler->get_embedding($input, $dimension);
 
         // Log the request and response.
+        $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
         $this->log_usage_raw(
             $feature->get_id(),
             $create_embedding_request->get_request_json(),
             $create_embedding_request->get_response_json(),
             $create_embedding_request->get_input_tokens(),
-            $create_embedding_request->get_output_tokens()
+            $create_embedding_request->get_output_tokens(),
+            $credit_multiplier
         );
 
         // Return the response.
@@ -429,12 +443,14 @@ class action_handler
         $create_image_request = $handler->create_image($prompt, $return_b64);
 
         // Log the request and response.
+        $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
         $this->log_usage_raw(
             $feature->get_id(),
             $create_image_request->get_request_json(),
             $create_image_request->get_response_json(),
             $create_image_request->get_input_tokens(),
-            $create_image_request->get_output_tokens()
+            $create_image_request->get_output_tokens(),
+            $credit_multiplier
         );
 
         return $create_image_request->get_response();
@@ -474,12 +490,14 @@ class action_handler
         $create_transcription_request = $handler->create_transcription($audio_filepath);
 
         // Log the request and response.
+        $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
         $this->log_usage_raw(
             $feature->get_id(),
             $create_transcription_request->get_request_json(),
             $create_transcription_request->get_response_json(),
             $create_transcription_request->get_input_tokens(),
-            $create_transcription_request->get_output_tokens()
+            $create_transcription_request->get_output_tokens(),
+            $credit_multiplier
         );
 
         return $create_transcription_request->get_response();
@@ -523,12 +541,14 @@ class action_handler
         $create_speech_request = $handler->create_speech($input, $voice, $response_format);
 
         // Log the request and response.
+        $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
         $this->log_usage_raw(
             $feature->get_id(),
             $create_speech_request->get_request_json(),
             $create_speech_request->jsonSerialize(),
             $create_speech_request->get_input_tokens(),
-            $create_speech_request->get_output_tokens()
+            $create_speech_request->get_output_tokens(),
+            $credit_multiplier
         );
 
         return $create_speech_request;
