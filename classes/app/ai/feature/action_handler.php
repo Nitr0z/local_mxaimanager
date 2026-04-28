@@ -288,12 +288,37 @@ class action_handler
         entity $feature,
         \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request
     ): void {
+        $this->log_usage_raw(
+            $feature->get_id(),
+            $chat_completion_request->get_request_json(),
+            $chat_completion_request->get_response_json(),
+            $chat_completion_request->get_input_tokens(),
+            $chat_completion_request->get_output_tokens()
+        );
+    }
+
+    /**
+     * Generic usage logging for all request types.
+     *
+     * @param int|null $feature_id
+     * @param array $request_json
+     * @param mixed $response_json
+     * @param int $input_tokens
+     * @param int $output_tokens
+     */
+    private function log_usage_raw(
+        ?int $feature_id,
+        array $request_json,
+        mixed $response_json,
+        int $input_tokens,
+        int $output_tokens
+    ): void {
         $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
-            'feature_id' => $feature->get_id(),
-            'request_json' => json_encode($chat_completion_request->get_request_json(), JSON_THROW_ON_ERROR),
-            'response_json' => json_encode($chat_completion_request->get_response_json(), JSON_THROW_ON_ERROR),
-            'input_tokens' => $chat_completion_request->get_input_tokens(),
-            'output_tokens' => $chat_completion_request->get_output_tokens(),
+            'feature_id' => $feature_id ?? 0,
+            'request_json' => json_encode($request_json, JSON_THROW_ON_ERROR),
+            'response_json' => json_encode($response_json, JSON_THROW_ON_ERROR),
+            'input_tokens' => $input_tokens,
+            'output_tokens' => $output_tokens,
             'session_id' => session_id(),
             'user_id' => $this->base_factory->user()->id,
             'timecreated' => time(),
@@ -356,9 +381,8 @@ class action_handler
         $create_embedding_request = $handler->get_embedding($input, $dimension);
 
         // Log the request and response.
-        $this->log_usage(
+        $this->log_usage_raw(
             $feature->get_id(),
-            $provider_id,
             $create_embedding_request->get_request_json(),
             $create_embedding_request->get_response_json(),
             $create_embedding_request->get_input_tokens(),
@@ -405,9 +429,8 @@ class action_handler
         $create_image_request = $handler->create_image($prompt, $return_b64);
 
         // Log the request and response.
-        $this->log_usage(
+        $this->log_usage_raw(
             $feature->get_id(),
-            $provider_id,
             $create_image_request->get_request_json(),
             $create_image_request->get_response_json(),
             $create_image_request->get_input_tokens(),
@@ -451,9 +474,8 @@ class action_handler
         $create_transcription_request = $handler->create_transcription($audio_filepath);
 
         // Log the request and response.
-        $this->log_usage(
+        $this->log_usage_raw(
             $feature->get_id(),
-            $provider_id,
             $create_transcription_request->get_request_json(),
             $create_transcription_request->get_response_json(),
             $create_transcription_request->get_input_tokens(),
@@ -501,9 +523,8 @@ class action_handler
         $create_speech_request = $handler->create_speech($input, $voice, $response_format);
 
         // Log the request and response.
-        $this->log_usage(
+        $this->log_usage_raw(
             $feature->get_id(),
-            $provider_id,
             $create_speech_request->get_request_json(),
             $create_speech_request->jsonSerialize(),
             $create_speech_request->get_input_tokens(),

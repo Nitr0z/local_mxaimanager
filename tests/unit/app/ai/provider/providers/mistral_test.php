@@ -594,9 +594,9 @@ class mistral_test extends \base_testcase
         $mform = $this->createMock(\MoodleQuickForm::class);
 
         // Expectations for all the element additions
-        $mform->expects($this->exactly(5))->method('addElement');
-        $mform->expects($this->exactly(5))->method('setType');
-        $mform->expects($this->exactly(2))->method('setDefault');
+        $mform->expects($this->exactly(6))->method('addElement');
+        $mform->expects($this->exactly(6))->method('setType');
+        $mform->expects($this->exactly(3))->method('setDefault');
 
         $element_name_prefix = 'test_';
 

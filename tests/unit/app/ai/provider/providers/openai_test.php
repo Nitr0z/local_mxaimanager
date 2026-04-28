@@ -768,9 +768,9 @@ class openai_test extends \base_testcase
         $mform = $this->createMock(\MoodleQuickForm::class);
 
         // Expectations for all the element additions
-        $mform->expects($this->exactly(6))->method('addElement');
-        $mform->expects($this->exactly(6))->method('setType');
-        $mform->expects($this->exactly(2))->method('setDefault');
+        $mform->expects($this->exactly(8))->method('addElement');
+        $mform->expects($this->exactly(8))->method('setType');
+        $mform->expects($this->exactly(3))->method('setDefault');
 
         $element_name_prefix = 'test_';
 
@@ -791,7 +791,8 @@ class openai_test extends \base_testcase
             'prefix_chat_model' => 'gpt-3.5-turbo',
             'prefix_embedding_model' => 'text-embedding-ada-002',
             'prefix_image_model' => 'some-image-model',
-            'prefix_transcription_model' => 'whisper-1'
+            'prefix_transcription_model' => 'whisper-1',
+            'prefix_tts_model' => 'tts-1'
         ];
 
         $errors = \local_mxaimanager\app\ai\provider\providers\openai::moodleform_validation(

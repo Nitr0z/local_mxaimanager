@@ -542,22 +542,68 @@ class action_handler_test extends base_testcase
 
     // --- check_token_quotas tests ---
 
-    public function test_enforce_quotas_skips_non_managed_non_preconfigured(): void
+    /**
+     * Helper: create a base_factory mock with db and user properly stubbed.
+     * This prevents "Undefined property: stdClass::$id" warnings.
+     */
+    private function create_base_factory_with_db(?\moodle_database $db_mock = null): base_factory
     {
-        // Provider ID > 0 and not in managed list → should NOT throw.
-        set_config('managed_provider_ids', '99', 'local_mxaimanager');
+        $db_mock = $db_mock ?? $this->createMock(\moodle_database::class);
+        $user = new \stdClass();
+        $user->id = 1;
 
         $base_factory_mock = $this->createMock(base_factory::class);
-        $handler_mock = $this->createMock(chat_completion::class);
+        $base_factory_mock->method('db')->willReturn($db_mock);
+        $base_factory_mock->method('user')->willReturn($user);
 
+        return $base_factory_mock;
+    }
+
+    /**
+     * Helper: configure all token quotas for testing.
+     */
+    private function set_all_quotas(
+        int $daily_in = 0, int $daily_out = 0,
+        int $weekly_in = 0, int $weekly_out = 0,
+        int $monthly_in = 0, int $monthly_out = 0
+    ): void {
+        set_config('quota_display_mode', 'tokens', 'local_mxaimanager');
+        set_config('daily_input_quota', (string)$daily_in, 'local_mxaimanager');
+        set_config('daily_output_quota', (string)$daily_out, 'local_mxaimanager');
+        set_config('weekly_input_quota', (string)$weekly_in, 'local_mxaimanager');
+        set_config('weekly_output_quota', (string)$weekly_out, 'local_mxaimanager');
+        set_config('monthly_input_quota', (string)$monthly_in, 'local_mxaimanager');
+        set_config('monthly_output_quota', (string)$monthly_out, 'local_mxaimanager');
+    }
+
+    /**
+     * Helper: build an action_handler that uses the given factory mock
+     * and stubs out provider instantiation with the given provider mock.
+     */
+    private function build_handler_for_quota_test(
+        base_factory $base_factory_mock,
+        $provider_mock
+    ): action_handler {
         $handler = $this->getMockBuilder(action_handler::class)
             ->setConstructorArgs([$base_factory_mock])
             ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
             ->getMock();
 
-        $handler->expects($this->once())
-            ->method('get_provider_handler_provider_and_settings_json')
-            ->willReturn($handler_mock);
+        $handler->method('get_provider_handler_provider_and_settings_json')
+            ->willReturn($provider_mock);
+
+        return $handler;
+    }
+
+    public function test_enforce_quotas_skips_non_managed_non_preconfigured(): void
+    {
+        // Provider ID > 0 and not in managed list → should NOT throw.
+        set_config('managed_provider_ids', '99', 'local_mxaimanager');
+
+        $base_factory_mock = $this->create_base_factory_with_db();
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
 
         $handler_mock->expects($this->once())
             ->method('chat_completion')
@@ -572,29 +618,12 @@ class action_handler_test extends base_testcase
     {
         // Provider ID < 0 (preconfigured) → should trigger quota enforcement.
         set_config('managed_provider_ids', '', 'local_mxaimanager');
-        set_config('quota_display_mode', 'tokens', 'local_mxaimanager');
-        // Set quotas to 0 (unlimited) to avoid exception.
-        set_config('daily_input_quota', '0', 'local_mxaimanager');
-        set_config('daily_output_quota', '0', 'local_mxaimanager');
-        set_config('weekly_input_quota', '0', 'local_mxaimanager');
-        set_config('weekly_output_quota', '0', 'local_mxaimanager');
-        set_config('monthly_input_quota', '0', 'local_mxaimanager');
-        set_config('monthly_output_quota', '0', 'local_mxaimanager');
+        $this->set_all_quotas(); // All 0 = unlimited.
 
-        $db_mock = $this->createMock(\moodle_database::class);
-        $base_factory_mock = $this->createMock(base_factory::class);
-        $base_factory_mock->method('db')->willReturn($db_mock);
-
+        $base_factory_mock = $this->create_base_factory_with_db();
         $handler_mock = $this->createMock(chat_completion::class);
 
-        $handler = $this->getMockBuilder(action_handler::class)
-            ->setConstructorArgs([$base_factory_mock])
-            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
-            ->getMock();
-
-        $handler->expects($this->once())
-            ->method('get_provider_handler_provider_and_settings_json')
-            ->willReturn($handler_mock);
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
 
         $handler_mock->expects($this->once())
             ->method('chat_completion')
@@ -602,6 +631,182 @@ class action_handler_test extends base_testcase
 
         // Provider -1 (preconfigured) → quotas should apply, but all are 0 (unlimited) → no exception.
         $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, -1, []);
+        $this->assertEquals('OK', $result);
+    }
+
+    public function test_check_token_quotas_daily_input_exceeded(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        $this->set_all_quotas(daily_in: 100);
+
+        // DB returns 100 input tokens used → exactly at the limit → should throw.
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 100, 'used_output' => 0]
+        );
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+    }
+
+    public function test_check_token_quotas_daily_output_exceeded(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        $this->set_all_quotas(daily_out: 50);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 0, 'used_output' => 75]
+        );
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+    }
+
+    public function test_check_token_quotas_weekly_input_exceeded(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        // Daily unlimited, weekly input = 500
+        $this->set_all_quotas(weekly_in: 500);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 600, 'used_output' => 0]
+        );
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+    }
+
+    public function test_check_token_quotas_monthly_output_exceeded(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        // Only monthly output has a limit.
+        $this->set_all_quotas(monthly_out: 1000);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 5000, 'used_output' => 1200]
+        );
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+    }
+
+    public function test_check_token_quotas_under_limit_passes(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        $this->set_all_quotas(daily_in: 1000, daily_out: 1000);
+
+        // Usage is well below quota.
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 50, 'used_output' => 30]
+        );
+        $db_mock->method('insert_record')->willReturn(1);
+
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        // Should succeed without exception.
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+        $this->assertEquals('OK', $result);
+    }
+
+    public function test_check_token_quotas_input_unlimited_output_exceeded(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        // Input unlimited (0), output limited to 200.
+        $this->set_all_quotas(daily_in: 0, daily_out: 200);
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['used_input' => 99999, 'used_output' => 250]
+        );
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        // Input is unlimited so no error; output exceeds quota → should throw.
+        $this->expectException(\local_mxaimanager\app\exceptions\quota_exceeded_exception::class);
+        $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+    }
+
+    public function test_check_token_quotas_credits_mode_skips_token_check(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        set_config('quota_display_mode', 'credits', 'local_mxaimanager');
+        // Even if token quotas are set, credits mode should NOT call check_token_quotas.
+        set_config('daily_input_quota', '1', 'local_mxaimanager');
+        set_config('daily_output_quota', '1', 'local_mxaimanager');
+
+        // DB is not expected to be called for token quota query in credits mode.
+        // credit_service::check_balance() is static and will be called instead.
+        // For this test we set balance to "unlimited" by not having any credit config.
+        $db_mock = $this->createMock(\moodle_database::class);
+        $db_mock->method('insert_record')->willReturn(1);
+        $db_mock->method('get_record_sql')->willReturn(
+            (object)['balance' => 9999]
+        );
+
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        // Should succeed - credits mode doesn't check token quotas.
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
+        $this->assertEquals('OK', $result);
+    }
+
+    public function test_check_token_quotas_all_periods_unlimited(): void
+    {
+        set_config('managed_provider_ids', '1', 'local_mxaimanager');
+        // All quotas at 0 = unlimited → all periods skipped → should pass.
+        $this->set_all_quotas();
+
+        $db_mock = $this->createMock(\moodle_database::class);
+        // get_record_sql should NOT be called because all periods are skipped.
+        $db_mock->expects($this->never())->method('get_record_sql');
+        $db_mock->method('insert_record')->willReturn(1);
+
+        $base_factory_mock = $this->create_base_factory_with_db($db_mock);
+        $handler_mock = $this->createMock(chat_completion::class);
+
+        $handler = $this->build_handler_for_quota_test($base_factory_mock, $handler_mock);
+
+        $handler_mock->expects($this->once())
+            ->method('chat_completion')
+            ->willReturn(new chat_completion_request([], [], 'OK', 5, 3, 'stop'));
+
+        $result = $handler->chat_completion(new entity(), [new message('user', 'test')], false, null, 1, []);
         $this->assertEquals('OK', $result);
     }
 }
