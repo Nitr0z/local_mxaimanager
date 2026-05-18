@@ -80,6 +80,37 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
     private const TTS_MODELS = [
         'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts',
     ];
+    /**
+     * Per-model cost weights ($/1M tokens) from OpenAI API pricing.
+     * @see https://openai.com/api/pricing/
+     */
+    protected const MODEL_COST_WEIGHTS = [
+        // Chat models
+        'gpt-5.4'         => ['input' => 2.50,  'output' => 15.00],
+        'gpt-5.4-pro'     => ['input' => 5.00,  'output' => 30.00],
+        'gpt-5'           => ['input' => 1.25,  'output' => 10.00],
+        'gpt-5-mini'      => ['input' => 0.40,  'output' => 1.60],
+        'gpt-5-nano'      => ['input' => 0.10,  'output' => 0.40],
+        'gpt-4.1'         => ['input' => 2.00,  'output' => 8.00],
+        'gpt-4.1-mini'    => ['input' => 0.40,  'output' => 1.60],
+        'gpt-4.1-nano'    => ['input' => 0.10,  'output' => 0.40],
+        'gpt-4o'          => ['input' => 2.50,  'output' => 10.00],
+        'gpt-4o-mini'     => ['input' => 0.15,  'output' => 0.60],
+        'o3'              => ['input' => 2.00,  'output' => 8.00],
+        'o3-mini'         => ['input' => 0.55,  'output' => 2.20],
+        'o3-pro'          => ['input' => 20.00, 'output' => 80.00],
+        // Embedding models
+        'text-embedding-3-large' => ['input' => 0.13, 'output' => 0.13],
+        'text-embedding-3-small' => ['input' => 0.02, 'output' => 0.02],
+        'text-embedding-ada-002' => ['input' => 0.10, 'output' => 0.10],
+        // Transcription models
+        'gpt-4o-transcribe'           => ['input' => 2.50, 'output' => 10.00],
+        'gpt-4o-mini-transcribe'      => ['input' => 0.15, 'output' => 0.60],
+        'gpt-4o-transcribe-diarize'   => ['input' => 2.50, 'output' => 10.00],
+        'whisper-1'                   => ['input' => 0.60, 'output' => 0.60],
+    ];
+
+    protected const DEFAULT_COST_WEIGHT = ['input' => 1.0, 'output' => 1.0];
 
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {

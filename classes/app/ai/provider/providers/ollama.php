@@ -44,6 +44,8 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
+    protected const DEFAULT_COST_WEIGHT = ['input' => 0.01, 'output' => 0.01];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         $mform->addElement(

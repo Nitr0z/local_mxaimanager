@@ -44,6 +44,21 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
         ]);
     }
 
+    protected const MODEL_COST_WEIGHTS = [
+        // Chat models
+        'meta-llama/Meta-Llama-3.1-70B-Instruct'   => ['input' => 0.13, 'output' => 0.40],
+        'meta-llama/Meta-Llama-3.1-8B-Instruct'    => ['input' => 0.03, 'output' => 0.10],
+        'Qwen/Qwen2.5-72B-Instruct'                => ['input' => 0.15, 'output' => 0.45],
+        'deepseek-ai/DeepSeek-V3'                  => ['input' => 0.20, 'output' => 0.60],
+        'mistralai/Mistral-Nemo-Instruct-2407'      => ['input' => 0.10, 'output' => 0.30],
+        // Embedding models
+        'BAAI/bge-en-icl'                           => ['input' => 0.05, 'output' => 0.05],
+        'intfloat/multilingual-e5-large-instruct'   => ['input' => 0.05, 'output' => 0.05],
+        'BAAI/bge-m3'                               => ['input' => 0.05, 'output' => 0.05],
+    ];
+
+    protected const DEFAULT_COST_WEIGHT = ['input' => 0.15, 'output' => 0.45];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         $mform->addElement(

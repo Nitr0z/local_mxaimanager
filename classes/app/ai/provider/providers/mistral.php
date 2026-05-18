@@ -65,6 +65,30 @@ class mistral extends provider implements interfaces\chat_completion, interfaces
         'voxtral-mini-25-07', 'voxtral-small-25-07',
     ];
 
+    protected const MODEL_COST_WEIGHTS = [
+        // Chat models
+        'mistral-large-3-25-12'        => ['input' => 0.50, 'output' => 1.50],
+        'mistral-medium-3-1-25-08'     => ['input' => 0.30, 'output' => 0.90],
+        'mistral-small-3-2-25-06'      => ['input' => 0.15, 'output' => 0.60],
+        'ministral-3-14b-25-12'        => ['input' => 0.08, 'output' => 0.24],
+        'ministral-3-8b-25-12'         => ['input' => 0.05, 'output' => 0.15],
+        'ministral-3-3b-25-12'         => ['input' => 0.02, 'output' => 0.06],
+        'magistral-medium-1-2-25-09'   => ['input' => 0.30, 'output' => 0.90],
+        'magistral-small-1-2-25-09'    => ['input' => 0.15, 'output' => 0.45],
+        'devstral-2-25-12'             => ['input' => 0.20, 'output' => 0.60],
+        'codestral-25-08'              => ['input' => 0.30, 'output' => 0.90],
+        // Embedding models
+        'mistral-embed-23-12'          => ['input' => 0.10, 'output' => 0.10],
+        'codestral-embed-25-05'        => ['input' => 0.10, 'output' => 0.10],
+        // Transcription models
+        'voxtral-mini-transcribe-26-02' => ['input' => 0.10, 'output' => 0.10],
+        'voxtral-mini-transcribe-25-07' => ['input' => 0.10, 'output' => 0.10],
+        'voxtral-mini-25-07'           => ['input' => 0.10, 'output' => 0.10],
+        'voxtral-small-25-07'          => ['input' => 0.20, 'output' => 0.20],
+    ];
+
+    protected const DEFAULT_COST_WEIGHT = ['input' => 0.30, 'output' => 0.90];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         self::add_model_field($mform, $element_name_prefix, 'chat_model',

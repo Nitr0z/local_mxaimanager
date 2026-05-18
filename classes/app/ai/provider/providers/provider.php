@@ -63,6 +63,41 @@ abstract class provider
     }
 
     /**
+     * Model cost weights: model_name => ['input' => $/1M tokens, 'output' => $/1M tokens].
+     * Used to weight token consumption relative to actual API pricing.
+     * Override in each provider subclass with provider-specific model costs.
+     */
+    protected const MODEL_COST_WEIGHTS = [];
+
+    /** Default cost weight when a model is not in MODEL_COST_WEIGHTS. */
+    protected const DEFAULT_COST_WEIGHT = ['input' => 1.0, 'output' => 1.0];
+
+    /**
+     * Get the cost weights for the model used by a given capability.
+     *
+     * @param string $capability One of: 'chat', 'embedding', 'image', 'tts', 'transcription'.
+     * @return array{input: float, output: float} Cost weights in $/1M tokens.
+     */
+    public function get_cost_weights(string $capability): array
+    {
+        $model_property = match ($capability) {
+            'chat' => 'chat_model',
+            'embedding' => 'embedding_model',
+            'image' => 'image_model',
+            'tts' => 'tts_model',
+            'transcription' => 'transcription_model',
+            default => null,
+        };
+
+        if ($model_property === null || !isset($this->$model_property)) {
+            return static::DEFAULT_COST_WEIGHT;
+        }
+
+        $model = $this->$model_property;
+        return static::MODEL_COST_WEIGHTS[$model] ?? static::DEFAULT_COST_WEIGHT;
+    }
+
+    /**
      * Add a model field as an autocomplete element with known models + free-text input.
      *
      * @param \MoodleQuickForm $mform

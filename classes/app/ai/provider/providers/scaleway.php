@@ -65,6 +65,21 @@ class scaleway extends provider implements interfaces\chat_completion, interface
         'black-forest-labs/flux-dev',
     ];
 
+    protected const MODEL_COST_WEIGHTS = [
+        // Chat models
+        'llama-3.3-70b-instruct'       => ['input' => 0.20, 'output' => 0.60],
+        'llama-3.1-8b-instruct'        => ['input' => 0.05, 'output' => 0.15],
+        'qwen2.5-72b-instruct'         => ['input' => 0.25, 'output' => 0.75],
+        'deepseek-r1'                  => ['input' => 0.30, 'output' => 0.90],
+        'mistral-nemo-instruct-2407'   => ['input' => 0.15, 'output' => 0.45],
+        'phi-4'                        => ['input' => 0.10, 'output' => 0.30],
+        // Embedding models
+        'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2' => ['input' => 0.05, 'output' => 0.05],
+        'baai/bge-multilingual-gemma2' => ['input' => 0.10, 'output' => 0.10],
+    ];
+
+    protected const DEFAULT_COST_WEIGHT = ['input' => 0.20, 'output' => 0.60];
+
     private static function add_chat_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         self::add_model_field($mform, $element_name_prefix, 'chat_model',

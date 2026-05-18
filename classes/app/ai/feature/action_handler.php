@@ -61,7 +61,12 @@ class action_handler
             return;
         }
 
-        $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'credits';
+        $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'none';
+
+        // No quota enforcement when billing is disabled.
+        if ($mode === 'none') {
+            return;
+        }
 
         if ($mode === 'credits') {
             credit_service::check_balance();
@@ -214,7 +219,8 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $this->log_usage($feature, $chat_completion_request, $credit_multiplier);
+        $cost_weights = $handler->get_cost_weights('chat');
+        $this->log_usage($feature, $chat_completion_request, $credit_multiplier, $cost_weights);
 
         // If the response was truncated (finish_reason = 'length') and we are in JSON mode,
         // continue fetching until we get a complete response or hit the max attempts.
@@ -227,7 +233,8 @@ class action_handler
                 $json_mode,
                 $json_schema,
                 $chat_completion_request,
-                $credit_multiplier
+                $credit_multiplier,
+                $cost_weights
             );
             return $this->strip_markdown_json_wrapper($response);
         }
@@ -248,6 +255,7 @@ class action_handler
      * @param array|null $json_schema
      * @param \local_mxaimanager\app\ai\provider\chat_completion_request $initial_request The first (truncated) response.
      * @param float $credit_multiplier Provider credit multiplier.
+     * @param array $cost_weights Model cost weights.
      * @return string The concatenated full response content.
      * @throws invalid_provider_instance_response
      */
@@ -258,7 +266,8 @@ class action_handler
         bool $json_mode,
         ?array $json_schema,
         \local_mxaimanager\app\ai\provider\chat_completion_request $initial_request,
-        float $credit_multiplier = 1.0
+        float $credit_multiplier = 1.0,
+        array $cost_weights = ['input' => 1.0, 'output' => 1.0]
     ): string {
         $accumulated_response = $initial_request->get_response();
         $last_request = $initial_request;
@@ -275,7 +284,7 @@ class action_handler
             $last_request = $handler->chat_completion($messages, $json_mode, $json_schema);
 
             // Log each continuation call individually for accurate token tracking.
-            $this->log_usage($feature, $last_request, $credit_multiplier);
+            $this->log_usage($feature, $last_request, $credit_multiplier, $cost_weights);
 
             // Accumulate the response content.
             $accumulated_response .= $last_request->get_response();
@@ -295,11 +304,13 @@ class action_handler
      * @param entity $feature
      * @param \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request
      * @param float $credit_multiplier Provider credit multiplier.
+     * @param array $cost_weights Model cost weights ['input' => float, 'output' => float].
      */
     private function log_usage(
         entity $feature,
         \local_mxaimanager\app\ai\provider\chat_completion_request $chat_completion_request,
-        float $credit_multiplier = 1.0
+        float $credit_multiplier = 1.0,
+        array $cost_weights = ['input' => 1.0, 'output' => 1.0]
     ): void {
         $this->log_usage_raw(
             $feature->get_id(),
@@ -307,7 +318,8 @@ class action_handler
             $chat_completion_request->get_response_json(),
             $chat_completion_request->get_input_tokens(),
             $chat_completion_request->get_output_tokens(),
-            $credit_multiplier
+            $credit_multiplier,
+            $cost_weights
         );
     }
 
@@ -320,6 +332,7 @@ class action_handler
      * @param int $input_tokens
      * @param int $output_tokens
      * @param float $credit_multiplier Provider credit multiplier for credit cost calculation.
+     * @param array $cost_weights Model cost weights ['input' => float, 'output' => float].
      */
     private function log_usage_raw(
         ?int $feature_id,
@@ -327,13 +340,20 @@ class action_handler
         mixed $response_json,
         int $input_tokens,
         int $output_tokens,
-        float $credit_multiplier = 1.0
+        float $credit_multiplier = 1.0,
+        array $cost_weights = ['input' => 1.0, 'output' => 1.0]
     ): void {
         $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'none';
         if ($mode === 'none') {
             $credits_used = 0.0;
         } else {
-            $credits_used = credit_service::calculate_credits($input_tokens, $output_tokens, $credit_multiplier);
+            $credits_used = credit_service::calculate_credits(
+                $input_tokens,
+                $output_tokens,
+                $credit_multiplier,
+                $cost_weights['input'] ?? 1.0,
+                $cost_weights['output'] ?? 1.0
+            );
         }
 
         $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
@@ -406,13 +426,15 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
+        $cost_weights = $handler->get_cost_weights('embedding');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_embedding_request->get_request_json(),
             $create_embedding_request->get_response_json(),
             $create_embedding_request->get_input_tokens(),
             $create_embedding_request->get_output_tokens(),
-            $credit_multiplier
+            $credit_multiplier,
+            $cost_weights
         );
 
         // Return the response.
@@ -456,13 +478,15 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
+        $cost_weights = $handler->get_cost_weights('image');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_image_request->get_request_json(),
             $create_image_request->get_response_json(),
             $create_image_request->get_input_tokens(),
             $create_image_request->get_output_tokens(),
-            $credit_multiplier
+            $credit_multiplier,
+            $cost_weights
         );
 
         return $create_image_request->get_response();
@@ -503,13 +527,15 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
+        $cost_weights = $handler->get_cost_weights('transcription');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_transcription_request->get_request_json(),
             $create_transcription_request->get_response_json(),
             $create_transcription_request->get_input_tokens(),
             $create_transcription_request->get_output_tokens(),
-            $credit_multiplier
+            $credit_multiplier,
+            $cost_weights
         );
 
         return $create_transcription_request->get_response();
@@ -554,13 +580,15 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
+        $cost_weights = $handler->get_cost_weights('tts');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_speech_request->get_request_json(),
             $create_speech_request->jsonSerialize(),
             $create_speech_request->get_input_tokens(),
             $create_speech_request->get_output_tokens(),
-            $credit_multiplier
+            $credit_multiplier,
+            $cost_weights
         );
 
         return $create_speech_request;

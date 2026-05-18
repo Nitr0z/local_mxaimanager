@@ -178,13 +178,20 @@ class credit_service
      * @param int $input_tokens
      * @param int $output_tokens
      * @param float $multiplier Provider credit multiplier.
+     * @param float $input_cost_weight Model-specific input cost weight.
+     * @param float $output_cost_weight Model-specific output cost weight.
      * @return float Credits consumed.
      */
-    public static function calculate_credits(int $input_tokens, int $output_tokens, float $multiplier): float
-    {
+    public static function calculate_credits(
+        int $input_tokens,
+        int $output_tokens,
+        float $multiplier,
+        float $input_cost_weight = 1.0,
+        float $output_cost_weight = 1.0
+    ): float {
         $tokens_per_credit = (int) get_config('local_mxaimanager', 'tokens_per_credit') ?: 1000;
-        $total_tokens = $input_tokens + $output_tokens;
-        return round(($total_tokens * $multiplier) / $tokens_per_credit, 2);
+        $weighted_tokens = ($input_tokens * $input_cost_weight) + ($output_tokens * $output_cost_weight);
+        return round(($weighted_tokens * $multiplier) / $tokens_per_credit, 4);
     }
 
     /**
