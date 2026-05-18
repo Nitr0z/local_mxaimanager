@@ -129,6 +129,7 @@ $string['credit_heading'] = 'Paramètres des crédits IA';
 $string['credit_heading_desc'] = 'Les crédits offrent un moyen simple de suivre l\'utilisation de l\'IA. Chaque action IA consomme des crédits en fonction des tokens utilisés et du multiplicateur de coût du fournisseur. Les crédits sont achetés en tant que solde prépayé.';
 $string['quota_display_mode'] = 'Mode d\'affichage des quotas';
 $string['quota_display_mode_desc'] = 'Choisissez l\'affichage des limites d\'utilisation : crédits (simplifié) ou tokens (avancé).';
+$string['mode_none'] = 'Aucun (facturation désactivée)';
 $string['mode_credits'] = 'Crédits';
 $string['mode_tokens'] = 'Tokens (avancé)';
 $string['tokens_per_credit'] = 'Tokens par crédit';

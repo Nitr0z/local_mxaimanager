@@ -130,6 +130,7 @@ $string['credit_heading'] = 'AI Credit Settings';
 $string['credit_heading_desc'] = 'Credits provide a simple way to track AI usage. Each AI action consumes credits based on the tokens used and the provider cost multiplier. Credits are purchased as a prepaid balance.';
 $string['quota_display_mode'] = 'Quota display mode';
 $string['quota_display_mode_desc'] = 'Choose how usage limits are displayed: as user-friendly credits or as raw token counts (advanced).';
+$string['mode_none'] = 'None (billing disabled)';
 $string['mode_credits'] = 'Credits';
 $string['mode_tokens'] = 'Tokens (advanced)';
 $string['tokens_per_credit'] = 'Tokens per credit';

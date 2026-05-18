@@ -42,6 +42,7 @@ if ($hassiteconfig) {
         get_string('quota_display_mode_desc', $component),
         'credits',
         [
+            'none'    => get_string('mode_none', $component),
             'credits' => get_string('mode_credits', $component),
             'tokens'  => get_string('mode_tokens', $component),
         ]
@@ -133,7 +134,19 @@ if ($hassiteconfig) {
     );
     $settings->add($setting);
 
-    // Hide all token quota fields when display mode is 'credits'.
+    // Credit-specific fields: hide when mode is 'none' or 'tokens'.
+    $credit_fields = [
+        'local_mxaimanager/credit_heading',
+        'local_mxaimanager/tokens_per_credit',
+        'local_mxaimanager/managed_provider_ids',
+        'local_mxaimanager/credit_recharge_ui',
+    ];
+    foreach ($credit_fields as $field) {
+        $settings->hide_if($field, 'local_mxaimanager/quota_display_mode', 'eq', 'none');
+        $settings->hide_if($field, 'local_mxaimanager/quota_display_mode', 'eq', 'tokens');
+    }
+
+    // Token quota fields: hide when mode is 'none' or 'credits'.
     $token_fields = [
         'local_mxaimanager/token_quota_heading',
         'local_mxaimanager/daily_input_quota',
@@ -144,6 +157,7 @@ if ($hassiteconfig) {
         'local_mxaimanager/monthly_output_quota',
     ];
     foreach ($token_fields as $field) {
+        $settings->hide_if($field, 'local_mxaimanager/quota_display_mode', 'eq', 'none');
         $settings->hide_if($field, 'local_mxaimanager/quota_display_mode', 'eq', 'credits');
     }
 

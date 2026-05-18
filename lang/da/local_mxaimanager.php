@@ -129,6 +129,7 @@ $string['credit_heading'] = 'AI Kredit Indstillinger';
 $string['credit_heading_desc'] = 'Kreditter giver en enkel måde at spore AI-forbrug. Hver AI-handling forbruger kreditter baseret på tokens brugt og providerens omkostningsmultiplikator. Kreditter købes som forudbetalt saldo.';
 $string['quota_display_mode'] = 'Kvotevisningstilstand';
 $string['quota_display_mode_desc'] = 'Vælg hvordan forbrugsgrænser vises: som brugervenlige kreditter eller som rå token-antal (avanceret).';
+$string['mode_none'] = 'Ingen (fakturering deaktiveret)';
 $string['mode_credits'] = 'Kreditter';
 $string['mode_tokens'] = 'Tokens (avanceret)';
 $string['tokens_per_credit'] = 'Tokens pr. kredit';

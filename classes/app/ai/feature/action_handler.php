@@ -329,7 +329,12 @@ class action_handler
         int $output_tokens,
         float $credit_multiplier = 1.0
     ): void {
-        $credits_used = credit_service::calculate_credits($input_tokens, $output_tokens, $credit_multiplier);
+        $mode = get_config('local_mxaimanager', 'quota_display_mode') ?: 'none';
+        if ($mode === 'none') {
+            $credits_used = 0.0;
+        } else {
+            $credits_used = credit_service::calculate_credits($input_tokens, $output_tokens, $credit_multiplier);
+        }
 
         $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
             'feature_id' => $feature_id ?? 0,
