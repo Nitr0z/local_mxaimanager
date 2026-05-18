@@ -156,11 +156,15 @@ $string['credit_history_note'] = 'Note';
 $string['credit_type_initial'] = 'Initial allocation';
 $string['credit_type_recharge'] = 'Recharge';
 $string['credit_type_adjustment'] = 'Adjustment';
+$string['quota_exceeded_title'] = '{$a}';
 $string['quota_exceeded_depleted_credits'] = 'Your AI credit balance has been depleted. Please contact your administrator to recharge credits.';
 $string['quota_exceeded_expired_credits'] = 'Your AI credits have expired. Please contact your administrator to renew your credit allocation.';
 $string['credit_empty_info'] = 'No credits have been allocated yet. Use the form below to add your initial credit balance.';
 $string['credit_disable'] = 'Disable this credit allocation';
 $string['credit_enable'] = 'Re-enable this credit allocation';
+$string['credit_recharge_amount_label'] = 'Number of credits to add to the balance.';
+$string['credit_recharge_expiry_label'] = 'Optional date when these credits expire. Leave empty for no expiration.';
+$string['credit_recharge_note_label'] = 'Optional reference note (e.g. invoice number) for tracking purposes.';
 
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Manage Moxis AI Manager configuration';

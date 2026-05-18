@@ -17,8 +17,11 @@
     - sesskey (string)
     - recharge_label (string)
     - amount_placeholder (string)
+    - amount_label (string)
     - expiry_placeholder (string)
+    - expiry_label (string)
     - note_placeholder (string)
+    - note_label (string)
     - has_ledger (bool)
     - th_date, th_amount, th_type, th_expiry, th_note (string)
     - ledger_rows (array of objects)
@@ -46,25 +49,32 @@
 </div>
 {{/is_expired}}
 
-<form method="post" action="{{action_url}}" class="form-inline mb-3">
+<form method="post" action="{{action_url}}" class="mb-3">
     <input type="hidden" name="sesskey" value="{{sesskey}}"/>
     <input type="hidden" name="s_local_mxaimanager_credit_recharge_ui" value="1"/>
     <input type="hidden" name="credit_recharge_submit" value="1"/>
-    <div class="form-group mr-2">
-        <input type="number" name="credit_recharge_amount" step="0.1" min="1"
-               class="form-control" placeholder="{{amount_placeholder}}" style="width: 120px;"/>
+    <div class="form-row align-items-end">
+        <div class="form-group col-auto">
+            <label for="credit_recharge_amount" class="small text-muted">{{amount_label}}</label>
+            <input type="number" id="credit_recharge_amount" name="credit_recharge_amount" step="0.1" min="1"
+                   class="form-control" placeholder="{{amount_placeholder}}" style="width: 140px;"/>
+        </div>
+        <div class="form-group col-auto">
+            <label for="credit_recharge_expiry" class="small text-muted">{{expiry_label}}</label>
+            <input type="date" id="credit_recharge_expiry" name="credit_recharge_expiry" class="form-control"
+                   title="{{expiry_placeholder}}" style="width: 170px;"/>
+        </div>
+        <div class="form-group col-auto">
+            <label for="credit_recharge_note" class="small text-muted">{{note_label}}</label>
+            <input type="text" id="credit_recharge_note" name="credit_recharge_note" class="form-control"
+                   placeholder="{{note_placeholder}}" style="width: 220px;"/>
+        </div>
+        <div class="form-group col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa fa-plus mr-1"></i> {{recharge_label}}
+            </button>
+        </div>
     </div>
-    <div class="form-group mr-2">
-        <input type="date" name="credit_recharge_expiry" class="form-control"
-               title="{{expiry_placeholder}}" style="width: 160px;"/>
-    </div>
-    <div class="form-group mr-2">
-        <input type="text" name="credit_recharge_note" class="form-control"
-               placeholder="{{note_placeholder}}" style="width: 200px;"/>
-    </div>
-    <button type="submit" class="btn btn-primary btn-sm">
-        <i class="fa fa-plus mr-1"></i> {{recharge_label}}
-    </button>
 </form>
 
 {{#has_ledger}}
@@ -92,14 +102,9 @@
             <td>{{expiry}}</td>
             <td>{{note}}</td>
             <td>
-                <form method="post" action="{{action_url}}" style="display:inline;">
-                    <input type="hidden" name="sesskey" value="{{sesskey}}"/>
-                    <input type="hidden" name="s_local_mxaimanager_credit_recharge_ui" value="1"/>
-                    <input type="hidden" name="credit_toggle_id" value="{{id}}"/>
-                    <button type="submit" class="btn btn-sm {{btn_class}}" title="{{btn_title}}">
-                        <i class="fa {{btn_icon}}"></i>
-                    </button>
-                </form>
+                <a href="{{toggle_url}}" class="btn btn-sm {{btn_class}}" title="{{btn_title}}">
+                    <i class="fa {{btn_icon}}"></i>
+                </a>
             </td>
         </tr>
         {{/ledger_rows}}

@@ -155,11 +155,15 @@ $string['credit_history_note'] = 'Note';
 $string['credit_type_initial'] = 'Indledende tildeling';
 $string['credit_type_recharge'] = 'Genopladning';
 $string['credit_type_adjustment'] = 'Justering';
+$string['quota_exceeded_title'] = '{$a}';
 $string['quota_exceeded_depleted_credits'] = 'Din AI-kreditsaldo er opbrugt. Kontakt venligst din administrator for at genoplade kreditter.';
 $string['quota_exceeded_expired_credits'] = 'Dine AI-kreditter er udløbet. Kontakt venligst din administrator for at forny din kredittildeling.';
 $string['credit_empty_info'] = 'Der er endnu ikke tildelt nogen kreditter. Brug formularen nedenfor til at tilføje din indledende kreditsaldo.';
 $string['credit_disable'] = 'Deaktiver denne kredittildeling';
 $string['credit_enable'] = 'Genaktiver denne kredittildeling';
+$string['credit_recharge_amount_label'] = 'Antal kreditter der skal tilføjes til saldoen.';
+$string['credit_recharge_expiry_label'] = 'Valgfri udløbsdato for disse kreditter. Lad stå tom for ingen udløbsdato.';
+$string['credit_recharge_note_label'] = 'Valgfri referencenote (f.eks. fakturanummer) til sporingsformål.';
 
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Manage Moxis AI Manager configuration';

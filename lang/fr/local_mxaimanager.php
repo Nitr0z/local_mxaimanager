@@ -155,11 +155,15 @@ $string['credit_history_note'] = 'Note';
 $string['credit_type_initial'] = 'Allocation initiale';
 $string['credit_type_recharge'] = 'Recharge';
 $string['credit_type_adjustment'] = 'Ajustement';
+$string['quota_exceeded_title'] = '{$a}';
 $string['quota_exceeded_depleted_credits'] = 'Votre solde de crédits IA est épuisé. Veuillez contacter votre administrateur pour recharger vos crédits.';
 $string['quota_exceeded_expired_credits'] = 'Vos crédits IA ont expiré. Veuillez contacter votre administrateur pour renouveler votre allocation de crédits.';
 $string['credit_empty_info'] = 'Aucun crédit n\'a encore été alloué. Utilisez le formulaire ci-dessous pour ajouter votre solde initial de crédits.';
 $string['credit_disable'] = 'Désactiver cette allocation de crédits';
 $string['credit_enable'] = 'Réactiver cette allocation de crédits';
+$string['credit_recharge_amount_label'] = 'Nombre de crédits à ajouter au solde.';
+$string['credit_recharge_expiry_label'] = 'Date d\'expiration optionnelle pour ces crédits. Laisser vide pour aucune expiration.';
+$string['credit_recharge_note_label'] = 'Note de référence optionnelle (ex : numéro de facture) pour le suivi.';
 
 // Capabilities
 $string['mxaimanager:manage_configuration'] = 'Gérer la configuration de Moxis AI Manager';

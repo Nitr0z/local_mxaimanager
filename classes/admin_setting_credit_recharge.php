@@ -16,6 +16,10 @@ class admin_setting_credit_recharge extends \admin_setting
 {
     public function __construct()
     {
+        // Handle toggle via GET before anything else renders.
+        // This avoids the nested-form problem (nested <form> is invalid HTML).
+        $this->handle_toggle_get();
+
         parent::__construct(
             'local_mxaimanager/credit_recharge_ui',
             get_string('credit_recharge_heading', 'local_mxaimanager'),
@@ -23,7 +27,21 @@ class admin_setting_credit_recharge extends \admin_setting
             ''
         );
         // nosave is NOT set here — we need write_setting() to be called on POST
-        // so that credit recharge and toggle actions are processed before Moodle redirects.
+        // so that credit recharge actions are processed before Moodle redirects.
+    }
+
+    /**
+     * Handle toggle via GET param (clicked as a link, not a form submit).
+     * Processes immediately and redirects to remove the param from the URL.
+     */
+    private function handle_toggle_get(): void
+    {
+        $toggle_id = optional_param('credit_toggle_id', 0, PARAM_INT);
+        if ($toggle_id > 0 && confirm_sesskey()) {
+            credit_service::toggle($toggle_id);
+            $redirect = new \moodle_url('/admin/settings.php', ['section' => 'local_mxaimanager_billing']);
+            redirect($redirect);
+        }
     }
 
     /**
@@ -35,7 +53,7 @@ class admin_setting_credit_recharge extends \admin_setting
     }
 
     /**
-     * Process the recharge or toggle if form was submitted.
+     * Process the recharge if form was submitted.
      * Moodle calls write_setting() on POST before redirecting,
      * so output_html() never sees the POST data.
      */
@@ -53,13 +71,6 @@ class admin_setting_credit_recharge extends \admin_setting
             if ($amount > 0) {
                 credit_service::recharge($amount, 'recharge', $note, $USER->id, $expires_at);
             }
-        }
-
-        // Handle toggle POST.
-        $toggle_id = optional_param('credit_toggle_id', 0, PARAM_INT);
-        if ($toggle_id > 0) {
-            require_sesskey();
-            credit_service::toggle($toggle_id);
         }
 
         return '';
@@ -90,6 +101,14 @@ class admin_setting_credit_recharge extends \admin_setting
         $ledger_rows = [];
         foreach ($ledger as $entry) {
             $is_active = !empty($entry->active);
+
+            // Build toggle URL as a GET link (avoids nested form issue).
+            $toggle_url = new \moodle_url('/admin/settings.php', [
+                'section' => 'local_mxaimanager_billing',
+                'credit_toggle_id' => $entry->id,
+                'sesskey' => $sesskey,
+            ]);
+
             $ledger_rows[] = [
                 'id'           => $entry->id,
                 'date'         => userdate($entry->timecreated, '%d/%m/%Y %H:%M'),
@@ -104,8 +123,7 @@ class admin_setting_credit_recharge extends \admin_setting
                 'btn_title'    => $is_active
                     ? get_string('credit_disable', 'local_mxaimanager')
                     : get_string('credit_enable', 'local_mxaimanager'),
-                'action_url'   => $action_url,
-                'sesskey'      => $sesskey,
+                'toggle_url'   => $toggle_url->out(false),
             ];
         }
 
@@ -125,8 +143,11 @@ class admin_setting_credit_recharge extends \admin_setting
             'sesskey'                 => $sesskey,
             'recharge_label'          => get_string('credit_recharge', 'local_mxaimanager'),
             'amount_placeholder'      => get_string('credit_recharge_amount', 'local_mxaimanager'),
+            'amount_label'            => get_string('credit_recharge_amount_label', 'local_mxaimanager'),
             'expiry_placeholder'      => get_string('credit_recharge_expiry', 'local_mxaimanager'),
+            'expiry_label'            => get_string('credit_recharge_expiry_label', 'local_mxaimanager'),
             'note_placeholder'        => get_string('credit_recharge_note', 'local_mxaimanager'),
+            'note_label'              => get_string('credit_recharge_note_label', 'local_mxaimanager'),
             'has_ledger'              => !empty($ledger_rows),
             'th_date'                 => get_string('credit_history_date', 'local_mxaimanager'),
             'th_amount'               => get_string('credit_history_amount', 'local_mxaimanager'),
@@ -143,3 +164,4 @@ class admin_setting_credit_recharge extends \admin_setting
         return format_admin_setting($this, $this->visiblename, $html, $this->description);
     }
 }
+
