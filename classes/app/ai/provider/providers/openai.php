@@ -108,6 +108,16 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         'gpt-4o-mini-transcribe'      => ['input' => 0.15, 'output' => 0.60],
         'gpt-4o-transcribe-diarize'   => ['input' => 2.50, 'output' => 10.00],
         'whisper-1'                   => ['input' => 0.60, 'output' => 0.60],
+        // Image models (per-image cost converted to $/1M virtual tokens @ 1000 tokens/image)
+        'gpt-image-1.5'      => ['input' => 0.0, 'output' => 20.00],
+        'gpt-image-1'        => ['input' => 0.0, 'output' => 40.00],
+        'gpt-image-1-mini'   => ['input' => 0.0, 'output' => 10.00],
+        'dall-e-3'           => ['input' => 0.0, 'output' => 40.00],
+        'dall-e-2'           => ['input' => 0.0, 'output' => 20.00],
+        // TTS models
+        'tts-1'              => ['input' => 15.00, 'output' => 0.0],
+        'tts-1-hd'           => ['input' => 30.00, 'output' => 0.0],
+        'gpt-4o-mini-tts'    => ['input' => 0.60, 'output' => 0.0],
     ];
 
     protected const DEFAULT_COST_WEIGHT = ['input' => 1.0, 'output' => 1.0];
@@ -378,7 +388,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
                 $json,
                 $json['data'][0][$return_b64 ? 'b64_json' : 'url'],
                 0,
-                0
+                1000
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

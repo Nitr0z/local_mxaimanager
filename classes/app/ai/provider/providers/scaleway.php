@@ -76,6 +76,9 @@ class scaleway extends provider implements interfaces\chat_completion, interface
         // Embedding models
         'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2' => ['input' => 0.05, 'output' => 0.05],
         'baai/bge-multilingual-gemma2' => ['input' => 0.10, 'output' => 0.10],
+        // Image models (per-image cost → $/1M virtual tokens @ 1000 tokens/image)
+        'black-forest-labs/flux-schnell' => ['input' => 0.0, 'output' => 3.00],
+        'black-forest-labs/flux-dev'     => ['input' => 0.0, 'output' => 10.00],
     ];
 
     protected const DEFAULT_COST_WEIGHT = ['input' => 0.20, 'output' => 0.60];
@@ -294,7 +297,7 @@ class scaleway extends provider implements interfaces\chat_completion, interface
                 $json,
                 $json['data'][0][$key],
                 0,
-                0
+                1000
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

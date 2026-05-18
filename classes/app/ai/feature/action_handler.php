@@ -38,6 +38,21 @@ class action_handler
     }
 
     /**
+     * Safely retrieve cost weights from a handler, with fallback for mocks/interfaces.
+     *
+     * @param object $handler The provider handler.
+     * @param string $capability The capability key (chat, embedding, image, tts, transcription).
+     * @return array{input: float, output: float}
+     */
+    private function get_handler_cost_weights(object $handler, string $capability): array
+    {
+        if (method_exists($handler, 'get_cost_weights')) {
+            return $handler->get_cost_weights($capability);
+        }
+        return ['input' => 1.0, 'output' => 1.0];
+    }
+
+    /**
      * Enforce usage limits before an AI request.
      * Non-managed/non-preconfigured providers are unlimited.
      * Managed providers (listed in managed_provider_ids) and
@@ -219,7 +234,7 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $cost_weights = $handler->get_cost_weights('chat');
+        $cost_weights = $this->get_handler_cost_weights($handler, 'chat');
         $this->log_usage($feature, $chat_completion_request, $credit_multiplier, $cost_weights);
 
         // If the response was truncated (finish_reason = 'length') and we are in JSON mode,
@@ -426,7 +441,7 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $cost_weights = $handler->get_cost_weights('embedding');
+        $cost_weights = $this->get_handler_cost_weights($handler, 'embedding');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_embedding_request->get_request_json(),
@@ -478,7 +493,7 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $cost_weights = $handler->get_cost_weights('image');
+        $cost_weights = $this->get_handler_cost_weights($handler, 'image');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_image_request->get_request_json(),
@@ -527,7 +542,7 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $cost_weights = $handler->get_cost_weights('transcription');
+        $cost_weights = $this->get_handler_cost_weights($handler, 'transcription');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_transcription_request->get_request_json(),
@@ -580,7 +595,7 @@ class action_handler
 
         // Log the request and response.
         $credit_multiplier = (float)($config_json['credit_multiplier'] ?? 1.0);
-        $cost_weights = $handler->get_cost_weights('tts');
+        $cost_weights = $this->get_handler_cost_weights($handler, 'tts');
         $this->log_usage_raw(
             $feature->get_id(),
             $create_speech_request->get_request_json(),
