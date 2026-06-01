@@ -396,10 +396,10 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1'
         ];
 
-        $expected_response = '{"data":[{"url":"https://example.com/image.png"}]}';
+        $expected_response = '{"data":[{"b64_json":"base64encodedimage"}],"usage":{"input_tokens":9,"output_tokens":1056}}';
 
         $this->mock_curl->expects($this->once())
             ->method('post')
@@ -407,10 +407,10 @@ class openai_test extends \base_testcase
                 'https://api.openai.com/v1/images/generations',
                 $this->callback(function ($data) {
                     $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'dall-e-3' &&
+                    return isset($decoded['model'], $decoded['prompt']) &&
+                        $decoded['model'] === 'gpt-image-1' &&
                         $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'url';
+                        !isset($decoded['response_format']);
                 })
             )
             ->willReturn($expected_response);
@@ -422,7 +422,9 @@ class openai_test extends \base_testcase
 
         $result = $provider->create_image('A test image', false);
 
-        $this->assertEquals('https://example.com/image.png', $result->get_response());
+        $this->assertEquals('base64encodedimage', $result->get_response());
+        $this->assertEquals(9, $result->get_input_tokens());
+        $this->assertEquals(1056, $result->get_output_tokens());
     }
 
     public function test_create_image_success_b64(): void
@@ -432,10 +434,10 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1'
         ];
 
-        $expected_response = '{"data":[{"b64_json":"base64encodedimage"}]}';
+        $expected_response = '{"data":[{"b64_json":"base64encodedimage"}],"usage":{"input_tokens":5,"output_tokens":800}}';
 
         $this->mock_curl->expects($this->once())
             ->method('post')
@@ -443,10 +445,10 @@ class openai_test extends \base_testcase
                 'https://api.openai.com/v1/images/generations',
                 $this->callback(function ($data) {
                     $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'dall-e-3' &&
+                    return isset($decoded['model'], $decoded['prompt']) &&
+                        $decoded['model'] === 'gpt-image-1' &&
                         $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'b64_json';
+                        !isset($decoded['response_format']);
                 })
             )
             ->willReturn($expected_response);
@@ -488,7 +490,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1'
         ];
 
         $this->mock_curl->expects($this->once())
@@ -513,7 +515,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1'
         ];
 
         $this->mock_curl->expects($this->once())
@@ -649,7 +651,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3',
+            'image_model' => 'gpt-image-1',
             'transcription_model' => 'whisper-1'
         ];
 
@@ -692,7 +694,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1'
         ];
 
         $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
@@ -715,7 +717,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3',
+            'image_model' => 'gpt-image-1',
             'transcription_model' => 'whisper-1'
         ];
 
@@ -743,7 +745,7 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3',
+            'image_model' => 'gpt-image-1',
             'transcription_model' => 'whisper-1'
         ];
 

@@ -68,8 +68,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
     ];
 
     private const IMAGE_MODELS = [
-        'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini',
-        'dall-e-3', 'dall-e-2',
+        'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini',
     ];
 
     private const TRANSCRIPTION_MODELS = [
@@ -109,11 +108,10 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         'gpt-4o-transcribe-diarize'   => ['input' => 2.50, 'output' => 10.00],
         'whisper-1'                   => ['input' => 0.60, 'output' => 0.60],
         // Image models (per-image cost converted to $/1M virtual tokens @ 1000 tokens/image)
+        'gpt-image-2'        => ['input' => 0.0, 'output' => 60.00],
         'gpt-image-1.5'      => ['input' => 0.0, 'output' => 20.00],
         'gpt-image-1'        => ['input' => 0.0, 'output' => 40.00],
         'gpt-image-1-mini'   => ['input' => 0.0, 'output' => 10.00],
-        'dall-e-3'           => ['input' => 0.0, 'output' => 40.00],
-        'dall-e-2'           => ['input' => 0.0, 'output' => 20.00],
         // TTS models
         'tts-1'              => ['input' => 15.00, 'output' => 0.0],
         'tts-1-hd'           => ['input' => 30.00, 'output' => 0.0],
@@ -365,10 +363,10 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
             throw new invalid_provider_instance_configuration('Image model is not configured');
         }
 
+        // GPT-image models only return b64_json and no longer accept response_format.
         $payload = [
             'model' => $this->image_model,
             'prompt' => $prompt,
-            'response_format' => $return_b64 ? 'b64_json' : 'url',
         ];
 
         try {
@@ -379,16 +377,16 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
 
             $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-            if (!isset($json['data'][0][$return_b64 ? 'b64_json' : 'url'])) {
+            if (!isset($json['data'][0]['b64_json'])) {
                 throw new \Exception('Missing image data in OpenAI response. OpenAI response: ' . $response);
             }
 
             return new image_generation_request(
                 $payload,
                 $json,
-                $json['data'][0][$return_b64 ? 'b64_json' : 'url'],
-                0,
-                1000
+                $json['data'][0]['b64_json'],
+                $json['usage']['input_tokens'] ?? 0,
+                $json['usage']['output_tokens'] ?? 1000
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(
