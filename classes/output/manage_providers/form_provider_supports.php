@@ -57,6 +57,11 @@ class form_provider_supports implements named_templatable, renderable
                 $implemented_classes,
                 true
             ),
+            'audio' => in_array(
+                \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class,
+                $implemented_classes,
+                true
+            ),
         ];
     }
 }

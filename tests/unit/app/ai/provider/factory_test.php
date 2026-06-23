@@ -57,6 +57,7 @@ class factory_test extends \base_testcase
         $expected_actions = [
             \local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion::class,
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding::class,
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class,
         ];
 
         foreach ($expected_actions as $action_interface) {
@@ -70,6 +71,39 @@ class factory_test extends \base_testcase
             $this->assertIsString($display_name);
             $this->assertNotEmpty($display_name);
         }
+    }
+
+    public function test_get_providers_supporting_action_create_audio(): void
+    {
+        $factory = \local_mxaimanager\app\factory::make();
+
+        $ai_factory = $factory->ai();
+        $provider_factory = $ai_factory->provider();
+
+        $audio_providers = $provider_factory->get_providers_supporting_action(
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class
+        );
+
+        // OpenAI is the only provider implementing the TTS interface in this phase.
+        $this->assertIsArray($audio_providers);
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\openai::class,
+            $audio_providers
+        );
+
+        // Other providers must NOT implement TTS yet.
+        $this->assertNotContains(
+            \local_mxaimanager\app\ai\provider\providers\mistral::class,
+            $audio_providers
+        );
+        $this->assertNotContains(
+            \local_mxaimanager\app\ai\provider\providers\nebius::class,
+            $audio_providers
+        );
+        $this->assertNotContains(
+            \local_mxaimanager\app\ai\provider\providers\ollama::class,
+            $audio_providers
+        );
     }
 
     public function test_get_providers_supporting_action_chat_completion(): void

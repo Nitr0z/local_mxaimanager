@@ -10,6 +10,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_mxaimanager\app\ai\provider\message;
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
+use local_mxaimanager\app\ai\provider\providers\interfaces\create_audio;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription;
@@ -343,5 +344,51 @@ class action_handler
         ]);
 
         return $create_transcription_request->get_response();
+    }
+
+    /**
+     * @param entity $feature
+     * @param string $text The text to synthesize.
+     * @param int $provider_id
+     * @param array $config_json
+     * @return string Base64-encoded audio.
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     */
+    public function create_audio(
+        entity $feature,
+        string $text,
+        int $provider_id,
+        array $config_json
+    ): string {
+        // Get the provider handler.
+        $handler = $this->get_provider_handler_provider_and_settings_json(
+            $provider_id,
+            $config_json
+        );
+
+        // Validate interface.
+        if (!($handler instanceof create_audio)) {
+            throw new invalid_provider_instance_configuration(
+                'Provider instance ID: ' . $provider_id . ' does not support audio creation'
+            );
+        }
+
+        // Make the audio creation request.
+        $create_audio_request = $handler->create_audio($text);
+
+        // Log the request and response.
+        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
+            'feature_id' => $feature->get_id(),
+            'request_json' => json_encode($create_audio_request->get_request_json(), JSON_THROW_ON_ERROR),
+            'response_json' => json_encode($create_audio_request->get_response_json(), JSON_THROW_ON_ERROR),
+            'input_tokens' => $create_audio_request->get_input_tokens(),
+            'output_tokens' => $create_audio_request->get_output_tokens(),
+            'session_id' => session_id(),
+            'user_id' => $this->base_factory->user()->id,
+            'timecreated' => time(),
+        ]);
+
+        return $create_audio_request->get_response();
     }
 }

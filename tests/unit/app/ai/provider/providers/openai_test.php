@@ -11,8 +11,10 @@ global $CFG;
 require_once $CFG->libdir . '/formslib.php';
 
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
+use local_mxaimanager\app\ai\provider\providers\interfaces\create_audio;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
+use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -389,7 +391,7 @@ class openai_test extends \base_testcase
         $this->assertEquals('{"name": "John"}', $result->get_response());
     }
 
-    public function test_create_image_success_url(): void
+    public function test_create_image_url_not_supported(): void
     {
         $json_config = [
             'base_url' => 'https://api.openai.com',
@@ -399,30 +401,20 @@ class openai_test extends \base_testcase
             'image_model' => 'dall-e-3'
         ];
 
-        $expected_response = '{"data":[{"url":"https://example.com/image.png"}]}';
-
-        $this->mock_curl->expects($this->once())
-            ->method('post')
-            ->with(
-                'https://api.openai.com/v1/images/generations',
-                $this->callback(function ($data) {
-                    $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'dall-e-3' &&
-                        $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'url';
-                })
-            )
-            ->willReturn($expected_response);
+        // The new OpenAI image API only returns base64, so requesting a URL (return_b64 = false)
+        // is no longer supported and must fail before any request is made.
+        $this->mock_curl->expects($this->never())
+            ->method('post');
 
         $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
             $this->mock_base_factory,
             $json_config
         );
 
-        $result = $provider->create_image('A test image', false);
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Openai new API only accepts b64_json');
 
-        $this->assertEquals('https://example.com/image.png', $result->get_response());
+        $provider->create_image('A test image', false);
     }
 
     public function test_create_image_success_b64(): void
@@ -432,21 +424,23 @@ class openai_test extends \base_testcase
             'api_key' => 'test_key',
             'chat_model' => 'gpt-3.5-turbo',
             'embedding_model' => 'text-embedding-ada-002',
-            'image_model' => 'dall-e-3'
+            'image_model' => 'gpt-image-1',
         ];
 
         $expected_response = '{"data":[{"b64_json":"base64encodedimage"}]}';
 
+        // The OpenAI /v1/images/generations endpoint no longer accepts response_format, so the
+        // provider must send only model and prompt and always read b64_json from the response.
         $this->mock_curl->expects($this->once())
             ->method('post')
             ->with(
                 'https://api.openai.com/v1/images/generations',
                 $this->callback(function ($data) {
                     $decoded = json_decode($data, true);
-                    return isset($decoded['model'], $decoded['prompt'], $decoded['response_format']) &&
-                        $decoded['model'] === 'dall-e-3' &&
-                        $decoded['prompt'] === 'A test image' &&
-                        $decoded['response_format'] === 'b64_json';
+                    return isset($decoded['model'], $decoded['prompt']) &&
+                        !isset($decoded['response_format']) &&
+                        $decoded['model'] === 'gpt-image-1' &&
+                        $decoded['prompt'] === 'A test image';
                 })
             )
             ->willReturn($expected_response);
@@ -503,7 +497,7 @@ class openai_test extends \base_testcase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Connection failed');
 
-        $provider->create_image('A test image', false);
+        $provider->create_image('A test image', true);
     }
 
     public function test_create_image_invalid_response(): void
@@ -527,7 +521,7 @@ class openai_test extends \base_testcase
 
         $this->expectException(invalid_provider_instance_response::class);
 
-        $provider->create_image('A test image', false);
+        $provider->create_image('A test image', true);
     }
 
     public function test_get_embedding_success(): void
@@ -767,10 +761,13 @@ class openai_test extends \base_testcase
     {
         $mform = $this->createMock(\MoodleQuickForm::class);
 
-        // Expectations for all the element additions
-        $mform->expects($this->exactly(6))->method('addElement');
-        $mform->expects($this->exactly(6))->method('setType');
-        $mform->expects($this->exactly(2))->method('setDefault');
+        // 6 existing fields (base_url, api_key, chat_model, embedding_model, image_model,
+        // transcription_model) + 3 new TTS fields (tts_model, tts_voice, tts_format).
+        $mform->expects($this->exactly(9))->method('addElement');
+        // setType is called only on text fields, not on selects — TTS adds 1 text + 2 selects.
+        $mform->expects($this->exactly(7))->method('setType');
+        // setDefault was called for base_url + api_key; TTS adds defaults for voice and format.
+        $mform->expects($this->exactly(4))->method('setDefault');
 
         $element_name_prefix = 'test_';
 
@@ -791,7 +788,8 @@ class openai_test extends \base_testcase
             'prefix_chat_model' => 'gpt-3.5-turbo',
             'prefix_embedding_model' => 'text-embedding-ada-002',
             'prefix_image_model' => 'some-image-model',
-            'prefix_transcription_model' => 'whisper-1'
+            'prefix_transcription_model' => 'whisper-1',
+            'prefix_tts_model' => 'tts-1'
         ];
 
         $errors = \local_mxaimanager\app\ai\provider\providers\openai::moodleform_validation(
@@ -913,6 +911,27 @@ class openai_test extends \base_testcase
         $this->assertNotEmpty($errors['prefix_transcription_model']);
     }
 
+    public function test_moodleform_validation_missing_tts_model(): void
+    {
+        $data = [
+            'prefix_base_url' => 'https://api.openai.com',
+            'prefix_api_key' => 'test_key',
+            'prefix_chat_model' => 'gpt-3.5-turbo',
+            'prefix_embedding_model' => 'text-embedding-ada-002',
+            'prefix_image_model' => 'some-image-model',
+            'prefix_transcription_model' => 'whisper-1'
+        ];
+
+        $errors = \local_mxaimanager\app\ai\provider\providers\openai::moodleform_validation(
+            $data,
+            'prefix_'
+        );
+
+        $this->assertArrayHasKey('prefix_tts_model', $errors);
+        $this->assertIsString($errors['prefix_tts_model']);
+        $this->assertNotEmpty($errors['prefix_tts_model']);
+    }
+
     public function test_action_moodleform_definition_chat_completion(): void
     {
         $mform = $this->createMock(\MoodleQuickForm::class);
@@ -1006,5 +1025,250 @@ class openai_test extends \base_testcase
 
         // The static method was called successfully if no exception was thrown
         $this->assertTrue(true);
+    }
+
+    public function test_action_moodleform_definition_create_audio(): void
+    {
+        $mform = $this->createMock(\MoodleQuickForm::class);
+
+        // TTS adds 3 elements: tts_model (text + setType) and tts_voice/tts_format (selects + setDefault).
+        $mform->expects($this->exactly(3))->method('addElement');
+        $mform->expects($this->once())->method('setType');
+        $mform->expects($this->exactly(2))->method('setDefault');
+
+        $element_name_prefix = 'test_';
+
+        \local_mxaimanager\app\ai\provider\providers\openai::action_moodleform_definition(
+            $mform,
+            create_audio::class,
+            $element_name_prefix
+        );
+
+        // The static method was called successfully if no exception was thrown
+        $this->assertTrue(true);
+    }
+
+    public function test_create_audio_success(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'image_model' => 'dall-e-3',
+            'transcription_model' => 'whisper-1',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'nova',
+            'tts_format' => 'mp3'
+        ];
+
+        $raw_audio = 'binary-audio-bytes';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->with(
+                'https://api.openai.com/v1/audio/speech',
+                $this->callback(function ($data) {
+                    $decoded = json_decode($data, true);
+                    return isset($decoded['model'], $decoded['input'], $decoded['voice'], $decoded['response_format']) &&
+                        $decoded['model'] === 'tts-1' &&
+                        $decoded['input'] === 'Hola mundo' &&
+                        $decoded['voice'] === 'nova' &&
+                        $decoded['response_format'] === 'mp3';
+                })
+            )
+            ->willReturn($raw_audio);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $result = $provider->create_audio('Hola mundo');
+
+        $this->assertEquals(base64_encode($raw_audio), $result->get_response());
+        $this->assertEquals(0, $result->get_input_tokens());
+        $this->assertEquals(0, $result->get_output_tokens());
+    }
+
+    public function test_create_audio_uses_default_voice_and_format_when_empty(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'image_model' => 'dall-e-3',
+            'transcription_model' => 'whisper-1',
+            'tts_model' => 'tts-1'
+            // tts_voice and tts_format intentionally omitted.
+        ];
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->with(
+                'https://api.openai.com/v1/audio/speech',
+                $this->callback(function ($data) {
+                    $decoded = json_decode($data, true);
+                    return $decoded['voice'] === 'alloy' && $decoded['response_format'] === 'mp3';
+                })
+            )
+            ->willReturn('binary-audio-bytes');
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $result = $provider->create_audio('Test');
+
+        $this->assertNotEmpty($result->get_response());
+    }
+
+    public function test_create_audio_missing_tts_model(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002'
+        ];
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $this->expectExceptionMessage('TTS model is not configured');
+
+        $provider->create_audio('Hello');
+    }
+
+    public function test_create_audio_invalid_voice(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'not-a-real-voice',
+            'tts_format' => 'mp3'
+        ];
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $this->expectExceptionMessage('TTS voice "not-a-real-voice" is not supported by OpenAI');
+
+        $provider->create_audio('Hello');
+    }
+
+    public function test_create_audio_invalid_format(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'alloy',
+            'tts_format' => 'ogg-vorbis'
+        ];
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $this->expectExceptionMessage('TTS format "ogg-vorbis" is not supported by OpenAI');
+
+        $provider->create_audio('Hello');
+    }
+
+    public function test_create_audio_curl_error(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'alloy',
+            'tts_format' => 'mp3'
+        ];
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->will($this->throwException(new \Exception('Connection failed')));
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_response::class);
+        $this->expectExceptionMessage('Connection failed');
+
+        $provider->create_audio('Hello');
+    }
+
+    public function test_create_audio_api_error_response(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'alloy',
+            'tts_format' => 'mp3'
+        ];
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn('{"error":{"message":"Invalid API key","type":"invalid_request_error"}}');
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_response::class);
+        $this->expectExceptionMessage('OpenAI TTS error');
+
+        $provider->create_audio('Hello');
+    }
+
+    public function test_create_audio_empty_response(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'tts_model' => 'tts-1',
+            'tts_voice' => 'alloy',
+            'tts_format' => 'mp3'
+        ];
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->willReturn('');
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_response::class);
+        $this->expectExceptionMessage('Empty audio response from OpenAI TTS');
+
+        $provider->create_audio('Hello');
     }
 }

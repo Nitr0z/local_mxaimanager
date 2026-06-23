@@ -44,6 +44,12 @@ $string['openai_transcription_model'] = 'OpenAI Transcription Model';
 $string['openai_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>whisper-1</strong>. Refer to OpenAI\'s documentation for available transcription models.';
 $string['mistral_transcription_model'] = 'Mistral Transcription Model';
 $string['mistral_transcription_model_help'] = 'Here you can specify the transcription model that should be used. For example: <strong>mistral-whisper</strong>. Refer to Mistral\'s documentation for available transcription models.';
+$string['openai_tts_model'] = 'OpenAI Text-to-Speech Model';
+$string['openai_tts_model_help'] = 'Her kan du angive den TTS-model (text-to-speech), der skal bruges. For eksempel: <strong>tts-1</strong>, <strong>tts-1-hd</strong>. Se OpenAI\'s dokumentation for tilgængelige TTS-modeller.';
+$string['openai_tts_voice'] = 'OpenAI Text-to-Speech Stemme';
+$string['openai_tts_voice_help'] = 'Stemme der bruges til at syntetisere lyden. OpenAI understøtter aktuelt: <strong>alloy</strong>, <strong>echo</strong>, <strong>fable</strong>, <strong>onyx</strong>, <strong>nova</strong>, <strong>shimmer</strong>.';
+$string['openai_tts_format'] = 'OpenAI Text-to-Speech Format';
+$string['openai_tts_format_help'] = 'Lydcontainerformat returneret af OpenAI. <strong>mp3</strong> er det sikreste valg for HTML5 audio-tagget; <strong>opus</strong>, <strong>aac</strong>, <strong>flac</strong>, <strong>wav</strong> og <strong>pcm</strong> understøttes også.';
 
 // Manage Features
 $string['manage_features:title'] = 'AI Funktioner';
@@ -59,6 +65,7 @@ $string['uses_chat'] = 'Chat';
 $string['uses_embedding'] = 'Embeddings';
 $string['uses_image'] = 'Image';
 $string['uses_audio_transcriptions'] = 'Audio Transcriptions';
+$string['uses_tts'] = 'Text-to-Speech';
 
 $string['base_url'] = 'Base URL';
 $string['api_key'] = 'API Nøgle';
@@ -66,11 +73,15 @@ $string['default_chat_model'] = 'Standard Chat Model';
 $string['default_embedding_model'] = 'Standard Embedding Model';
 $string['default_image_model'] = 'Standard Billedmodel';
 $string['default_transcription_model'] = 'Standard Transkriptionsmodel';
+$string['default_tts_model'] = 'Standard Text-to-Speech Model';
+$string['default_tts_voice'] = 'Standard Text-to-Speech Stemme';
+$string['default_tts_format'] = 'Standard Text-to-Speech Format';
 $string['provider_settings'] = 'Provider Indstillinger';
 $string['supports_chat'] = 'Understøtter Chat';
 $string['supports_embedding'] = 'Understøtter Embedding';
 $string['supports_image'] = 'Understøtter Billede';
 $string['supports_audio_transcriptions'] = 'Understøtter Audio Transkriptioner';
+$string['supports_tts'] = 'Understøtter Text-to-Speech';
 $string['provider_supports'] = 'Provider Kapaciteter';
 $string['default_action_providers'] = 'Standard Handling Provider-instanser';
 $string['here_you_define_default_action_providers'] = 'Her definerer du, hvilke provider-instanser der skal bruges som standard for hver handling.';

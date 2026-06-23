@@ -139,4 +139,53 @@ class handler_test extends base_testcase
         // Assert results
         $this->assertEquals([0.1, 0.2, 0.3], $result);
     }
+
+    public function test_create_audio(): void
+    {
+        $provider_resolver_mock = $this->createMock(provider_resolver::class);
+        $action_handler_mock = $this->createMock(action_handler::class);
+
+        $provider_resolver_mock->expects($this->once())
+            ->method('get_provider_and_config')
+            ->with(\local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class)
+            ->willReturn([7, ['tts_model' => 'tts-1']]);
+
+        $action_handler_mock->expects($this->once())
+            ->method('create_audio')
+            ->with(
+                $this->isInstanceOf(entity::class),
+                $this->equalTo('Hola mundo'),
+                $this->equalTo(7),
+                $this->equalTo(['tts_model' => 'tts-1'])
+            )
+            ->willReturn('base64audiopayload');
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $ai_factory_mock = $this->createMock(ai_factory::class);
+        $feature_factory_mock = $this->createMock(feature_factory::class);
+
+        $base_factory_mock->expects($this->exactly(2))
+            ->method('ai')
+            ->willReturn($ai_factory_mock);
+
+        $ai_factory_mock->expects($this->exactly(2))
+            ->method('feature')
+            ->willReturn($feature_factory_mock);
+
+        $feature_factory_mock->expects($this->once())
+            ->method('provider_resolver')
+            ->willReturn($provider_resolver_mock);
+
+        $feature_factory_mock->expects($this->once())
+            ->method('action_handler')
+            ->willReturn($action_handler_mock);
+
+        $feature_entity_mock = $this->createMock(entity::class);
+
+        $handler = new handler($base_factory_mock, $feature_entity_mock);
+
+        $result = $handler->create_audio('Hola mundo');
+
+        $this->assertEquals('base64audiopayload', $result);
+    }
 }

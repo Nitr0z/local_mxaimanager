@@ -123,4 +123,31 @@ class handler
             $config_json
         );
     }
+
+    /**
+     * Synthesize audio (text-to-speech) from a text input.
+     *
+     * Returns the base64-encoded audio binary. Mimetype/format is determined by the
+     * provider config (`tts_format`).
+     *
+     * @param string $text
+     * @return string Base64-encoded audio.
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     * @throws no_provider_instance_configured
+     */
+    public function create_audio(string $text): string
+    {
+        // Get provider_id and settings_json for the action.
+        [$provider_id, $config_json] = $this->provider_resolver->get_provider_and_config(
+            \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class
+        );
+
+        return $this->action_handler->create_audio(
+            $this->feature,
+            $text,
+            $provider_id,
+            $config_json
+        );
+    }
 }
