@@ -1,10 +1,5 @@
 <?php
 
-namespace behat;
-use behat_base;
-
-require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
-
 class behat_local_mxaimanager extends behat_base
 {
     /**
