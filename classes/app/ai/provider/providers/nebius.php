@@ -143,6 +143,8 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
             throw new invalid_provider_instance_configuration('Chat model is not configured');
         }
 
+        $messages = $this->merge_system_messages($messages);
+
         $payload = [
             'model' => $this->chat_model,
             'messages' => $messages,
@@ -163,6 +165,7 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
         }
 
         try {
+
             $response = $this->curl->post(
                 "{$this->base_url}/v1/chat/completions",
                 json_encode($payload, JSON_THROW_ON_ERROR)

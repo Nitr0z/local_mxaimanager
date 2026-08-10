@@ -27,4 +27,5 @@ interface chat_completion
         bool $json_mode = false,
         ?array $json_schema = null
     ): chat_completion_request;
+
 }

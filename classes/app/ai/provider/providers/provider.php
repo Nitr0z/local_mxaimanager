@@ -8,6 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 
 // @codeCoverageIgnoreEnd
 
+use local_mxaimanager\app\ai\provider\message;
 use local_mxaimanager\app\factory as base_factory;
 
 abstract class provider
@@ -61,4 +62,28 @@ abstract class provider
     {
         return str_replace(' ', '_', strtolower(static::class)) . '_';
     }
+
+
+    /**
+     * Merges the contents of all system messages into one and places it at index zero.
+     *
+     * @param message[] $messages
+     * @return message[]
+     */
+    protected function merge_system_messages(array $messages): array
+    {
+        $system_messages_contents = [];
+        $non_system_messages = [];
+
+        foreach ($messages as $message) {
+            if ($message->get_role() === 'system') {
+                $system_messages_contents[] = $message->get_content();
+            } else {
+                $non_system_messages[] = $message;
+            }
+        }
+
+        return array_merge([new message('system', implode("\n", $system_messages_contents))], $non_system_messages);
+    }
+
 }
