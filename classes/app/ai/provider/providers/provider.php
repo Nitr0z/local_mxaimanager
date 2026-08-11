@@ -76,11 +76,21 @@ abstract class provider
         $non_system_messages = [];
 
         foreach ($messages as $message) {
-            if ($message->get_role() === 'system') {
-                $system_messages_contents[] = $message->get_content();
-            } else {
-                $non_system_messages[] = $message;
+            $msg = $message;
+            //Guard against message delivered as associative array instead of obj of type message.
+            if(is_array($message)) {
+                $msg = new message($message['role'], $message['content']);
             }
+
+            if ($msg->get_role() === 'system') {
+                $system_messages_contents[] = $msg->get_content();
+            } else {
+                $non_system_messages[] = $msg;
+            }
+        }
+
+        if(empty($system_messages_contents)) {
+            return $messages;
         }
 
         return array_merge([new message('system', implode("\n", $system_messages_contents))], $non_system_messages);
