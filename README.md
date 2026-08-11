@@ -114,6 +114,8 @@ None
 
 ## Change log
 
+* **1.0.6 (2026081100)**
+    - Fixed bug with providers using chat completion and sending multiple system role messages in the messages array
 * **1.0.5 (2026040700)**
     - Removed support for text-to-image generation in nebius AI provider.
 * **1.0.4 (2026011200)**
