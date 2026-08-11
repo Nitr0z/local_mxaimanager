@@ -276,6 +276,8 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
             throw new invalid_provider_instance_configuration('Chat model is not configured');
         }
 
+        $messages = $this->merge_system_messages($messages);
+
         $payload = [
             'model' => $this->chat_model,
             'messages' => $messages,
