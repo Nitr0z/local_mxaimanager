@@ -99,43 +99,5 @@ function xmldb_local_mxaimanager_upgrade($oldversion): bool
         }
     }
 
-    if ($oldversion < 2026081800) {
-        $old_interface = 'local_mxaimanager\\app\\ai\\provider\\providers\\interfaces\\create_speech';
-        $new_interface = \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class;
-
-        $default_audio = $DB->get_record('local_mxaimanager_default_providers', [
-            'action_interface' => $new_interface,
-        ]);
-        $default_speech = $DB->get_record('local_mxaimanager_default_providers', [
-            'action_interface' => $old_interface,
-        ]);
-        if ($default_speech) {
-            if ($default_audio) {
-                $DB->delete_records('local_mxaimanager_default_providers', ['id' => $default_speech->id]);
-            } else {
-                $default_speech->action_interface = $new_interface;
-                $DB->update_record('local_mxaimanager_default_providers', $default_speech);
-            }
-        }
-
-        $speech_actions = $DB->get_records('local_mxaimanager_feature_actions', [
-            'action_interface' => $old_interface,
-        ]);
-        foreach ($speech_actions as $row) {
-            $existing_audio = $DB->get_record('local_mxaimanager_feature_actions', [
-                'feature_id' => $row->feature_id,
-                'action_interface' => $new_interface,
-            ]);
-            if ($existing_audio) {
-                $DB->delete_records('local_mxaimanager_feature_actions', ['id' => $row->id]);
-            } else {
-                $row->action_interface = $new_interface;
-                $DB->update_record('local_mxaimanager_feature_actions', $row);
-            }
-        }
-
-        upgrade_plugin_savepoint(true, 2026081800, 'local', 'mxaimanager');
-    }
-
     return true;
 }

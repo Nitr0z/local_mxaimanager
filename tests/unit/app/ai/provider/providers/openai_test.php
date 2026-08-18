@@ -762,10 +762,10 @@ class openai_test extends \base_testcase
         $mform = $this->createMock(\MoodleQuickForm::class);
 
         // 6 existing fields (base_url, api_key, chat_model, embedding_model, image_model,
-        // transcription_model) + 3 new TTS fields (tts_model, tts_voice, tts_format).
-        $mform->expects($this->exactly(9))->method('addElement');
-        // setType is called only on text fields, not on selects — TTS adds 1 text + 2 selects.
-        $mform->expects($this->exactly(7))->method('setType');
+        // transcription_model) + 3 TTS fields + vision_model.
+        $mform->expects($this->exactly(10))->method('addElement');
+        // setType is called only on text fields, not on selects - TTS adds 1 text + 2 selects.
+        $mform->expects($this->exactly(8))->method('setType');
         // setDefault was called for base_url + api_key; TTS adds defaults for voice and format.
         $mform->expects($this->exactly(4))->method('setDefault');
 

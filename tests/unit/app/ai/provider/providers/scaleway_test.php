@@ -13,6 +13,7 @@ require_once $CFG->libdir . '/formslib.php';
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
+use local_mxaimanager\app\ai\provider\providers\interfaces\vision;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -648,8 +649,8 @@ class scaleway_test extends \base_testcase
 
         // Expectations for all the element additions
         // base_url, api_key, chat_model, embedding_model, image_model = 5 elements
-        $mform->expects($this->exactly(5))->method('addElement');
-        $mform->expects($this->exactly(5))->method('setType');
+        $mform->expects($this->exactly(6))->method('addElement');
+        $mform->expects($this->exactly(6))->method('setType');
         $mform->expects($this->exactly(2))->method('setDefault');
 
         $element_name_prefix = 'test_';
@@ -790,6 +791,84 @@ class scaleway_test extends \base_testcase
 
         // The static method was called successfully if no exception was thrown
         $this->assertTrue(true);
+    }
+
+    public function test_action_moodleform_definition_vision(): void
+    {
+        $mform = $this->createMock(\MoodleQuickForm::class);
+
+        $mform->expects($this->once())->method('addElement');
+        $mform->expects($this->once())->method('setType');
+
+        $element_name_prefix = 'test_';
+
+        \local_mxaimanager\app\ai\provider\providers\scaleway::action_moodleform_definition(
+            $mform,
+            vision::class,
+            $element_name_prefix
+        );
+
+        $this->assertTrue(true);
+    }
+
+    public function test_vision_success(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.scaleway.ai/v1',
+            'api_key' => 'test_key',
+            'chat_model' => 'llama-3.3-70b-instruct',
+            'embedding_model' => 'baai/bge-multilingual-gemma2',
+            'image_model' => 'black-forest-labs/flux-schnell',
+            'vision_model' => 'pixtral-12b-2409',
+        ];
+
+        $image = tempnam(sys_get_temp_dir(), 'vision') . '.jpg';
+        file_put_contents($image, 'fakejpeg');
+
+        $expected_response = '{"choices":[{"message":{"content":"Hello from the page"},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":4}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->with(
+                'https://api.scaleway.ai/v1/chat/completions',
+                $this->callback(function ($data) {
+                    $decoded = json_decode($data, true);
+                    return ($decoded['model'] ?? '') === 'pixtral-12b-2409'
+                        && ($decoded['messages'][0]['content'][0]['type'] ?? '') === 'text'
+                        && ($decoded['messages'][0]['content'][1]['type'] ?? '') === 'image_url';
+                })
+            )
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\scaleway(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $result = $provider->vision('Read this page', [$image]);
+        $this->assertEquals('Hello from the page', $result->get_response());
+        $this->assertEquals(12, $result->get_input_tokens());
+
+        unlink($image);
+    }
+
+    public function test_vision_missing_model(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.scaleway.ai/v1',
+            'api_key' => 'test_key',
+            'chat_model' => 'llama-3.3-70b-instruct',
+            'embedding_model' => 'baai/bge-multilingual-gemma2',
+            'image_model' => 'black-forest-labs/flux-schnell',
+        ];
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\scaleway(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $provider->vision('Read this page', ['/tmp/missing.jpg']);
     }
 
     public function test_action_moodleform_definition_unknown_interface(): void

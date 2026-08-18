@@ -36,4 +36,7 @@ $string['openai_tts_model_help'] = 'Aquí puedes especificar el modelo TTS (text
 $string['openai_tts_voice'] = 'Voz Text-to-Speech de OpenAI';
 $string['openai_tts_voice_help'] = 'Voz utilizada para sintetizar el audio. OpenAI soporta actualmente: <strong>alloy</strong>, <strong>echo</strong>, <strong>fable</strong>, <strong>onyx</strong>, <strong>nova</strong>, <strong>shimmer</strong>.';
 $string['supports_tts'] = 'Soporta Text-to-Speech';
+$string['supports_vision'] = 'Soporta Vision';
 $string['uses_tts'] = 'Text-to-Speech';
+$string['uses_vision'] = 'Vision';
+$string['default_vision_model'] = 'Modelo Vision por defecto';

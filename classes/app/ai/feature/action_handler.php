@@ -36,6 +36,14 @@ class action_handler
     }
 
     /**
+     * @return int
+     */
+    private function current_user_id(): int
+    {
+        return (int) ($this->base_factory->user()->id ?? 0);
+    }
+
+    /**
      * @param int $provider_id
      * @param array $config_json
      * @return chat_completion|create_embedding
@@ -179,7 +187,7 @@ class action_handler
             'input_tokens' => $chat_completion_request->get_input_tokens(),
             'output_tokens' => $chat_completion_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
     }
@@ -245,7 +253,7 @@ class action_handler
             'input_tokens' => $create_embedding_request->get_input_tokens(),
             'output_tokens' => $create_embedding_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
 
@@ -294,7 +302,7 @@ class action_handler
             'input_tokens' => $create_image_request->get_input_tokens(),
             'output_tokens' => $create_image_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
 
@@ -340,7 +348,7 @@ class action_handler
             'input_tokens' => $create_transcription_request->get_input_tokens(),
             'output_tokens' => $create_transcription_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
 
@@ -386,7 +394,7 @@ class action_handler
             'input_tokens' => $create_audio_request->get_input_tokens(),
             'output_tokens' => $create_audio_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
 
@@ -433,7 +441,7 @@ class action_handler
             'input_tokens' => $vision_request->get_input_tokens(),
             'output_tokens' => $vision_request->get_output_tokens(),
             'session_id' => session_id(),
-            'user_id' => $this->base_factory->user()->id,
+            'user_id' => $this->current_user_id(),
             'timecreated' => time(),
         ]);
 
