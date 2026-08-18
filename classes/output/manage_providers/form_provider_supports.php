@@ -62,6 +62,11 @@ class form_provider_supports implements named_templatable, renderable
                 $implemented_classes,
                 true
             ),
+            'vision' => in_array(
+                \local_mxaimanager\app\ai\provider\providers\interfaces\vision::class,
+                $implemented_classes,
+                true
+            ),
         ];
     }
 }

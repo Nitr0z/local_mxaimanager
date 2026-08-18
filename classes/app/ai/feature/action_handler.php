@@ -14,6 +14,7 @@ use local_mxaimanager\app\ai\provider\providers\interfaces\create_audio;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_image;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription;
+use local_mxaimanager\app\ai\provider\providers\interfaces\vision;
 use local_mxaimanager\app\ai\provider\transcription;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
@@ -390,5 +391,83 @@ class action_handler
         ]);
 
         return $create_audio_request->get_response();
+    }
+
+    /**
+     * @param entity $feature
+     * @param string $prompt
+     * @param string[] $image_filepaths
+     * @param int $provider_id
+     * @param array $config_json
+     * @return string
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     */
+    public function vision(
+        entity $feature,
+        string $prompt,
+        array $image_filepaths,
+        int $provider_id,
+        array $config_json
+    ): string {
+        $handler = $this->get_provider_handler_provider_and_settings_json(
+            $provider_id,
+            $config_json
+        );
+
+        if (!($handler instanceof vision)) {
+            throw new invalid_provider_instance_configuration(
+                'Provider instance ID: ' . $provider_id . ' does not support vision'
+            );
+        }
+
+        $vision_request = $handler->vision($prompt, $image_filepaths);
+
+        $this->base_factory->db()->insert_record('local_mxaimanager_feature_action_usage_logs', [
+            'feature_id' => $feature->get_id(),
+            'request_json' => json_encode(
+                $this->redact_vision_request_for_log($vision_request->get_request_json()),
+                JSON_THROW_ON_ERROR
+            ),
+            'response_json' => json_encode($vision_request->get_response_json(), JSON_THROW_ON_ERROR),
+            'input_tokens' => $vision_request->get_input_tokens(),
+            'output_tokens' => $vision_request->get_output_tokens(),
+            'session_id' => session_id(),
+            'user_id' => $this->base_factory->user()->id,
+            'timecreated' => time(),
+        ]);
+
+        return $vision_request->get_response();
+    }
+
+    /**
+     * Drop raw image bytes from usage logs.
+     *
+     * @param array $request_json
+     * @return array
+     */
+    private function redact_vision_request_for_log(array $request_json): array
+    {
+        if (!isset($request_json['messages']) || !is_array($request_json['messages'])) {
+            return $request_json;
+        }
+
+        foreach ($request_json['messages'] as &$message) {
+            if (isset($message['images']) && is_array($message['images'])) {
+                $message['images'] = array_fill(0, count($message['images']), '[image]');
+            }
+            if (!isset($message['content']) || !is_array($message['content'])) {
+                continue;
+            }
+            foreach ($message['content'] as &$part) {
+                if (($part['type'] ?? '') === 'image_url') {
+                    $part['image_url']['url'] = '[image]';
+                }
+            }
+            unset($part);
+        }
+        unset($message);
+
+        return $request_json;
     }
 }

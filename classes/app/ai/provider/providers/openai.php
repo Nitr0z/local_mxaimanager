@@ -14,13 +14,14 @@ use local_mxaimanager\app\ai\provider\create_embedding_request;
 use local_mxaimanager\app\ai\provider\create_transcription_request;
 use local_mxaimanager\app\ai\provider\image_generation_request;
 use local_mxaimanager\app\ai\provider\transcription;
+use local_mxaimanager\app\ai\provider\vision_request;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use local_mxaimanager\app\factory as base_factory;
 
 class openai extends provider implements interfaces\chat_completion, interfaces\create_embedding,
                                          interfaces\create_image, interfaces\create_transcription,
-                                         interfaces\create_audio
+                                         interfaces\create_audio, interfaces\vision
 {
     private const TTS_ALLOWED_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
     private const TTS_ALLOWED_FORMATS = ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm'];
@@ -37,6 +38,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
     private string $tts_model;
     private string $tts_voice;
     private string $tts_format;
+    private string $vision_model;
 
     /**
      * @throws invalid_provider_instance_configuration
@@ -53,6 +55,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         $this->tts_model = $json_config['tts_model'] ?? '';
         $this->tts_voice = $json_config['tts_voice'] ?? '';
         $this->tts_format = $json_config['tts_format'] ?? '';
+        $this->vision_model = $json_config['vision_model'] ?? '';
 
         if (empty($this->base_url) || empty($this->api_key)) {
             throw new invalid_provider_instance_configuration('OpenAI is missing base url and/or api key');
@@ -171,6 +174,20 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         $mform->addHelpButton("{$element_name_prefix}tts_format", 'openai_tts_format', 'local_mxaimanager');
     }
 
+    private static function add_vision_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
+    {
+        $mform->addElement(
+            'text',
+            "{$element_name_prefix}vision_model",
+            get_string('default_vision_model', 'local_mxaimanager'),
+            [
+                'action' => interfaces\vision::class
+            ]
+        );
+        $mform->setType("{$element_name_prefix}vision_model", PARAM_TEXT);
+        $mform->addHelpButton("{$element_name_prefix}vision_model", 'openai_vision_model', 'local_mxaimanager');
+    }
+
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         // Add base_url field
@@ -199,6 +216,7 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
         self::add_tts_model_field($mform, $element_name_prefix);
         self::add_tts_voice_field($mform, $element_name_prefix);
         self::add_tts_format_field($mform, $element_name_prefix);
+        self::add_vision_model_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array
@@ -258,6 +276,9 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
                 self::add_tts_model_field($mform, $element_name_prefix);
                 self::add_tts_voice_field($mform, $element_name_prefix);
                 self::add_tts_format_field($mform, $element_name_prefix);
+                break;
+            case interfaces\vision::class:
+                self::add_vision_model_field($mform, $element_name_prefix);
                 break;
             default:
         }
@@ -532,6 +553,53 @@ class openai extends provider implements interfaces\chat_completion, interfaces\
                 base64_encode($response),
                 0,
                 0
+            );
+        } catch (\Throwable $t) {
+            throw new invalid_provider_instance_response(
+                'Invalid response from OpenAI: ' . $t->getMessage(),
+                previous: $t
+            );
+        }
+    }
+
+    /**
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     */
+    public function vision(string $prompt, array $image_filepaths): vision_request
+    {
+        if (empty($this->vision_model)) {
+            throw new invalid_provider_instance_configuration('Vision model is not configured');
+        }
+
+        $payload = [
+            'model' => $this->vision_model,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => self::build_openai_vision_content($prompt, $image_filepaths),
+                ],
+            ],
+        ];
+
+        try {
+            $response = $this->curl->post(
+                "{$this->base_url}/v1/chat/completions",
+                json_encode($payload, JSON_THROW_ON_ERROR)
+            );
+
+            $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+
+            if (!isset($json['choices'][0]['message']['content'])) {
+                throw new \Exception('Missing content in OpenAI vision response. OpenAI response: ' . $response);
+            }
+
+            return new vision_request(
+                $payload,
+                $json,
+                (string) $json['choices'][0]['message']['content'],
+                $json['usage']['prompt_tokens'] ?? 0,
+                $json['usage']['completion_tokens'] ?? 0
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

@@ -188,4 +188,54 @@ class handler_test extends base_testcase
 
         $this->assertEquals('base64audiopayload', $result);
     }
+
+    public function test_vision(): void
+    {
+        $provider_resolver_mock = $this->createMock(provider_resolver::class);
+        $action_handler_mock = $this->createMock(action_handler::class);
+
+        $provider_resolver_mock->expects($this->once())
+            ->method('get_provider_and_config')
+            ->with(\local_mxaimanager\app\ai\provider\providers\interfaces\vision::class)
+            ->willReturn([8, ['vision_model' => 'gpt-4o']]);
+
+        $action_handler_mock->expects($this->once())
+            ->method('vision')
+            ->with(
+                $this->isInstanceOf(entity::class),
+                $this->equalTo('Read this page'),
+                $this->equalTo(['/tmp/page.jpg']),
+                $this->equalTo(8),
+                $this->equalTo(['vision_model' => 'gpt-4o'])
+            )
+            ->willReturn('page text');
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $ai_factory_mock = $this->createMock(ai_factory::class);
+        $feature_factory_mock = $this->createMock(feature_factory::class);
+
+        $base_factory_mock->expects($this->exactly(2))
+            ->method('ai')
+            ->willReturn($ai_factory_mock);
+
+        $ai_factory_mock->expects($this->exactly(2))
+            ->method('feature')
+            ->willReturn($feature_factory_mock);
+
+        $feature_factory_mock->expects($this->once())
+            ->method('provider_resolver')
+            ->willReturn($provider_resolver_mock);
+
+        $feature_factory_mock->expects($this->once())
+            ->method('action_handler')
+            ->willReturn($action_handler_mock);
+
+        $feature_entity_mock = $this->createMock(entity::class);
+
+        $handler = new handler($base_factory_mock, $feature_entity_mock);
+
+        $result = $handler->vision('Read this page', ['/tmp/page.jpg']);
+
+        $this->assertEquals('page text', $result);
+    }
 }

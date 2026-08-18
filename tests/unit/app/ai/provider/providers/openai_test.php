@@ -1271,4 +1271,68 @@ class openai_test extends \base_testcase
 
         $provider->create_audio('Hello');
     }
+
+    public function test_vision_success(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'image_model' => 'gpt-image-1',
+            'transcription_model' => 'whisper-1',
+            'tts_model' => 'tts-1',
+            'vision_model' => 'gpt-4o',
+        ];
+
+        $image = tempnam(sys_get_temp_dir(), 'vision') . '.jpg';
+        file_put_contents($image, 'fakejpeg');
+
+        $expected_response = '{"choices":[{"message":{"content":"Hello from the page"},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":4}}';
+
+        $this->mock_curl->expects($this->once())
+            ->method('post')
+            ->with(
+                'https://api.openai.com/v1/chat/completions',
+                $this->callback(function ($data) {
+                    $decoded = json_decode($data, true);
+                    return ($decoded['model'] ?? '') === 'gpt-4o'
+                        && ($decoded['messages'][0]['content'][0]['type'] ?? '') === 'text'
+                        && ($decoded['messages'][0]['content'][1]['type'] ?? '') === 'image_url';
+                })
+            )
+            ->willReturn($expected_response);
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $result = $provider->vision('Read this page', [$image]);
+        $this->assertEquals('Hello from the page', $result->get_response());
+        $this->assertEquals(12, $result->get_input_tokens());
+
+        unlink($image);
+    }
+
+    public function test_vision_missing_model(): void
+    {
+        $json_config = [
+            'base_url' => 'https://api.openai.com',
+            'api_key' => 'test_key',
+            'chat_model' => 'gpt-3.5-turbo',
+            'embedding_model' => 'text-embedding-ada-002',
+            'image_model' => 'gpt-image-1',
+            'transcription_model' => 'whisper-1',
+            'tts_model' => 'tts-1',
+        ];
+
+        $provider = new \local_mxaimanager\app\ai\provider\providers\openai(
+            $this->mock_base_factory,
+            $json_config
+        );
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $provider->vision('Read this page', ['/tmp/missing.jpg']);
+    }
 }

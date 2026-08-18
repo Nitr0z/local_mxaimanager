@@ -37,6 +37,7 @@ class factory
             \local_mxaimanager\app\ai\provider\providers\mistral::class => 'Mistral',
             \local_mxaimanager\app\ai\provider\providers\ollama::class => 'Ollama',
             \local_mxaimanager\app\ai\provider\providers\nebius::class => 'Nebius',
+            \local_mxaimanager\app\ai\provider\providers\scaleway::class => 'Scaleway',
         ];
     }
 
@@ -51,6 +52,7 @@ class factory
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_image::class => 'Image',
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_transcription::class => 'Audio Transcription',
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class => 'Text-to-Speech',
+            \local_mxaimanager\app\ai\provider\providers\interfaces\vision::class => 'Vision',
         ];
     }
 

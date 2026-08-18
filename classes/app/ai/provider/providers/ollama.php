@@ -10,17 +10,20 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_mxaimanager\app\ai\provider\chat_completion_request;
 use local_mxaimanager\app\ai\provider\create_embedding_request;
+use local_mxaimanager\app\ai\provider\vision_request;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_configuration;
 use local_mxaimanager\app\exceptions\invalid_provider_instance_response;
 use local_mxaimanager\app\factory as base_factory;
 
-class ollama extends provider implements interfaces\chat_completion, interfaces\create_embedding
+class ollama extends provider implements interfaces\chat_completion, interfaces\create_embedding,
+                                         interfaces\vision
 {
     private \curl $curl;
     private string $base_url;
     private string $api_key;
     private string $chat_model;
     private string $embedding_model;
+    private string $vision_model;
 
     /**
      * @throws invalid_provider_instance_configuration
@@ -32,6 +35,7 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
         $this->api_key = $json_config['api_key'] ?? '';
         $this->chat_model = $json_config['chat_model'] ?? '';
         $this->embedding_model = $json_config['embedding_model'] ?? '';
+        $this->vision_model = $json_config['vision_model'] ?? '';
 
         if (empty($this->base_url) || empty($this->api_key)) {
             throw new invalid_provider_instance_configuration('Ollama is missing base url and/or api key');
@@ -72,6 +76,20 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
         $mform->addHelpButton("{$element_name_prefix}embedding_model", 'ollama_embedding_model', 'local_mxaimanager');
     }
 
+    private static function add_vision_model_field(\MoodleQuickForm $mform, string $element_name_prefix): void
+    {
+        $mform->addElement(
+            'text',
+            "{$element_name_prefix}vision_model",
+            get_string('default_vision_model', 'local_mxaimanager'),
+            [
+                'action' => interfaces\vision::class
+            ]
+        );
+        $mform->setType("{$element_name_prefix}vision_model", PARAM_TEXT);
+        $mform->addHelpButton("{$element_name_prefix}vision_model", 'ollama_vision_model', 'local_mxaimanager');
+    }
+
     public static function moodleform_definition(\MoodleQuickForm $mform, string $element_name_prefix): void
     {
         // Add base_url field
@@ -89,6 +107,7 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
 
         // Add embedding model field
         self::add_embedding_model_field($mform, $element_name_prefix);
+        self::add_vision_model_field($mform, $element_name_prefix);
     }
 
     public static function moodleform_validation(array $data, string $element_name_prefix): array
@@ -125,6 +144,9 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
                 break;
             case interfaces\create_embedding::class:
                 self::add_embedding_model_field($mform, $element_name_prefix);
+                break;
+            case interfaces\vision::class:
+                self::add_vision_model_field($mform, $element_name_prefix);
                 break;
             default:
         }
@@ -215,6 +237,59 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
                 $json['embeddings'][0],
                 $json['prompt_eval_count'],
                 0 // Ollama does not provide completion eval count for embeddings
+            );
+        } catch (\Throwable $t) {
+            throw new invalid_provider_instance_response(
+                'Invalid response from Ollama: ' . $t->getMessage(),
+                previous: $t
+            );
+        }
+    }
+
+    /**
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     */
+    public function vision(string $prompt, array $image_filepaths): vision_request
+    {
+        if (empty($this->vision_model)) {
+            throw new invalid_provider_instance_configuration('Vision model is not configured');
+        }
+        if ($prompt === '' || empty($image_filepaths)) {
+            throw new invalid_provider_instance_configuration('Vision requires a prompt and at least one image');
+        }
+
+        $images = [];
+        foreach ($image_filepaths as $path) {
+            $images[] = self::read_image_file($path)['base64'];
+        }
+
+        $payload = [
+            'model' => $this->vision_model,
+            'stream' => false,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $prompt,
+                    'images' => $images,
+                ],
+            ],
+        ];
+
+        try {
+            $response = $this->curl->post("{$this->base_url}/api/chat", json_encode($payload, JSON_THROW_ON_ERROR));
+            $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+
+            if (!isset($json['message']['content'])) {
+                throw new \Exception('Missing content in Ollama vision response. Ollama response: ' . $response);
+            }
+
+            return new vision_request(
+                $payload,
+                $json,
+                (string) $json['message']['content'],
+                $json['prompt-eval-count'] ?? 0,
+                $json['eval-count'] ?? 0
             );
         } catch (\Throwable $t) {
             throw new invalid_provider_instance_response(

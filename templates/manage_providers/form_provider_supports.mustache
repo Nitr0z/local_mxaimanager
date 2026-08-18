@@ -46,5 +46,14 @@
             {{/audio}}
             {{#str}}supports_tts, local_mxaimanager{{/str}}
         </li>
+        <li>
+            {{#vision}}
+                <i class="fa fa-square-check"></i>
+            {{/vision}}
+            {{^vision}}
+                <i class="fa fa-square-o"></i>
+            {{/vision}}
+            {{#str}}supports_vision, local_mxaimanager{{/str}}
+        </li>
     </ul>
 </div>

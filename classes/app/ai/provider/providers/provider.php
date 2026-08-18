@@ -96,4 +96,55 @@ abstract class provider
         return array_merge([new message('system', implode("\n", $system_messages_contents))], $non_system_messages);
     }
 
+    /**
+     * @param string $path
+     * @return array{mime: string, base64: string}
+     */
+    protected static function read_image_file(string $path): array
+    {
+        $bytes = @file_get_contents($path);
+        if ($bytes === false || $bytes === '') {
+            throw new \local_mxaimanager\app\exceptions\invalid_provider_instance_configuration(
+                'Vision image is empty or unreadable: ' . $path
+            );
+        }
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = $ext === 'png' ? 'image/png' : 'image/jpeg';
+
+        return [
+            'mime' => $mime,
+            'base64' => base64_encode($bytes),
+        ];
+    }
+
+    /**
+     * OpenAI-compatible multimodal user content (text + image_url data URLs).
+     *
+     * @param string $prompt
+     * @param string[] $image_filepaths
+     * @return array
+     */
+    protected static function build_openai_vision_content(string $prompt, array $image_filepaths): array
+    {
+        if ($prompt === '' || empty($image_filepaths)) {
+            throw new \local_mxaimanager\app\exceptions\invalid_provider_instance_configuration(
+                'Vision requires a prompt and at least one image'
+            );
+        }
+
+        $parts = [
+            ['type' => 'text', 'text' => $prompt],
+        ];
+        foreach ($image_filepaths as $path) {
+            $image = self::read_image_file($path);
+            $parts[] = [
+                'type' => 'image_url',
+                'image_url' => [
+                    'url' => 'data:' . $image['mime'] . ';base64,' . $image['base64'],
+                ],
+            ];
+        }
+
+        return $parts;
+    }
 }

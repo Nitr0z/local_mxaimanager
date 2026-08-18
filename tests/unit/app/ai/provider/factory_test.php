@@ -26,6 +26,8 @@ class factory_test extends \base_testcase
             \local_mxaimanager\app\ai\provider\providers\openai::class,
             \local_mxaimanager\app\ai\provider\providers\mistral::class,
             \local_mxaimanager\app\ai\provider\providers\ollama::class,
+            \local_mxaimanager\app\ai\provider\providers\nebius::class,
+            \local_mxaimanager\app\ai\provider\providers\scaleway::class,
         ];
 
         foreach ($expected_providers as $provider_class) {
@@ -58,6 +60,7 @@ class factory_test extends \base_testcase
             \local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion::class,
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding::class,
             \local_mxaimanager\app\ai\provider\providers\interfaces\create_audio::class,
+            \local_mxaimanager\app\ai\provider\providers\interfaces\vision::class,
         ];
 
         foreach ($expected_actions as $action_interface) {
@@ -103,6 +106,40 @@ class factory_test extends \base_testcase
         $this->assertNotContains(
             \local_mxaimanager\app\ai\provider\providers\ollama::class,
             $audio_providers
+        );
+    }
+
+    public function test_get_providers_supporting_action_vision(): void
+    {
+        $factory = \local_mxaimanager\app\factory::make();
+
+        $ai_factory = $factory->ai();
+        $provider_factory = $ai_factory->provider();
+
+        $vision_providers = $provider_factory->get_providers_supporting_action(
+            \local_mxaimanager\app\ai\provider\providers\interfaces\vision::class
+        );
+
+        $this->assertIsArray($vision_providers);
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\openai::class,
+            $vision_providers
+        );
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\scaleway::class,
+            $vision_providers
+        );
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\mistral::class,
+            $vision_providers
+        );
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\ollama::class,
+            $vision_providers
+        );
+        $this->assertContains(
+            \local_mxaimanager\app\ai\provider\providers\nebius::class,
+            $vision_providers
         );
     }
 

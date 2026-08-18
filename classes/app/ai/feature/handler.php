@@ -150,4 +150,29 @@ class handler
             $config_json
         );
     }
+
+    /**
+     * Read images with a vision-capable model.
+     *
+     * @param string $prompt
+     * @param string[] $image_filepaths
+     * @return string
+     * @throws invalid_provider_instance_configuration
+     * @throws invalid_provider_instance_response
+     * @throws no_provider_instance_configured
+     */
+    public function vision(string $prompt, array $image_filepaths): string
+    {
+        [$provider_id, $config_json] = $this->provider_resolver->get_provider_and_config(
+            \local_mxaimanager\app\ai\provider\providers\interfaces\vision::class
+        );
+
+        return $this->action_handler->vision(
+            $this->feature,
+            $prompt,
+            $image_filepaths,
+            $provider_id,
+            $config_json
+        );
+    }
 }

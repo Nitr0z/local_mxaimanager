@@ -93,6 +93,12 @@ $embedding = $feature_handler->create_embedding(
     $dimension
 );
 
+/** Vision (read images with a dedicated vision model) **/
+$ocr_text = $feature_handler->vision(
+    'Transcribe this page. Output only the text.',
+    ['/path/to/page.jpg']
+);
+
 var_dump([
     'chat_completion' => [
         'messages' => $messages,
@@ -102,6 +108,9 @@ var_dump([
         'input' => $input,
         'dimension' => $dimension,
         'response' => $embedding
+    ],
+    'vision' => [
+        'response' => $ocr_text
     ]
 ]);
 die();
@@ -114,6 +123,10 @@ None
 
 ## Change log
 
+* **1.0.7 (2026081800)**
+    - Added vision action (read images with a dedicated vision model).
+    - Added Scaleway provider.
+    - Migrated leftover fork `create_speech` mappings to official `create_audio`.
 * **1.0.6 (2026081100)**
     - Fixed bug with providers using chat completion and sending multiple system role messages in the messages array
 * **1.0.5 (2026040700)**

@@ -19,7 +19,9 @@ use local_mxaimanager\app\ai\feature\action_handler;
 use local_mxaimanager\app\ai\provider\providers\interfaces\chat_completion;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_audio;
 use local_mxaimanager\app\ai\provider\providers\interfaces\create_embedding;
+use local_mxaimanager\app\ai\provider\providers\interfaces\vision;
 use local_mxaimanager\app\ai\provider\create_audio_request;
+use local_mxaimanager\app\ai\provider\vision_request;
 
 /**
  * Mock handler class that has methods but doesn't implement interfaces
@@ -562,5 +564,64 @@ class action_handler_test extends base_testcase
         $this->expectExceptionMessage('Provider instance ID: 99 does not support audio creation');
 
         $handler->create_audio(new entity(), 'Hello', 99, ['foo' => 'bar']);
+    }
+
+    public function test_vision_success(): void
+    {
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $provider_handler_mock = $this->createMock(vision::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->with(8, ['vision_model' => 'gpt-4o'])
+            ->willReturn($provider_handler_mock);
+
+        $provider_handler_mock->expects($this->once())
+            ->method('vision')
+            ->with('Read this page', ['/tmp/page.jpg'])
+            ->willReturn(new vision_request(
+                ['model' => 'gpt-4o'],
+                [],
+                'page text',
+                12,
+                4
+            ));
+
+        $result = $handler->vision(
+            new entity(),
+            'Read this page',
+            ['/tmp/page.jpg'],
+            8,
+            ['vision_model' => 'gpt-4o']
+        );
+
+        $this->assertEquals('page text', $result);
+    }
+
+    public function test_vision_provider_not_supporting_interface(): void
+    {
+        $handler_instance = new MockHandlerWithoutInterface();
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+
+        $handler = $this->getMockBuilder(action_handler::class)
+            ->setConstructorArgs([$base_factory_mock])
+            ->onlyMethods(['get_provider_handler_provider_and_settings_json'])
+            ->getMock();
+
+        $handler->expects($this->once())
+            ->method('get_provider_handler_provider_and_settings_json')
+            ->with(99, ['foo' => 'bar'])
+            ->willReturn($handler_instance);
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $this->expectExceptionMessage('Provider instance ID: 99 does not support vision');
+
+        $handler->vision(new entity(), 'Read this page', ['/tmp/page.jpg'], 99, ['foo' => 'bar']);
     }
 }
