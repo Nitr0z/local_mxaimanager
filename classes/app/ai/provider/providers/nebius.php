@@ -235,8 +235,10 @@ class nebius extends provider implements interfaces\chat_completion, interfaces\
         $payload = [
             'model' => $this->embedding_model,
             'input' => $input,
-            'dimensions' => $dimension
         ];
+        if ($dimension !== null && $dimension > 0) {
+            $payload['dimensions'] = $dimension;
+        }
 
         try {
             $response = $this->curl->post(

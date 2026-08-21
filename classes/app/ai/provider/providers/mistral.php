@@ -259,8 +259,10 @@ class mistral extends provider implements interfaces\chat_completion, interfaces
         $payload = [
             'model' => $this->embedding_model,
             'input' => $input,
-            'output_dimension' => $dimension
         ];
+        if ($dimension !== null && $dimension > 0) {
+            $payload['output_dimension'] = $dimension;
+        }
 
         try {
             $response = $this->curl->post(

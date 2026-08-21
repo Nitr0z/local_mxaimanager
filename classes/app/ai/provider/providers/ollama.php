@@ -217,10 +217,10 @@ class ollama extends provider implements interfaces\chat_completion, interfaces\
         $payload = [
             'model' => $this->embedding_model,
             'input' => $input,
-            "options" => [
-                'dimensions' => $dimension
-            ]
         ];
+        if ($dimension !== null && $dimension > 0) {
+            $payload['options'] = ['dimensions' => $dimension];
+        }
 
         try {
             $response = $this->curl->post("{$this->base_url}/api/embed", json_encode($payload, JSON_THROW_ON_ERROR));
