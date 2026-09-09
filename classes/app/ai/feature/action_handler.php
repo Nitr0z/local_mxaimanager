@@ -47,6 +47,7 @@ class action_handler
      * @param int $provider_id
      * @param array $config_json
      * @return chat_completion|create_embedding
+     * @throws invalid_provider_instance_configuration
      */
     protected function get_provider_handler_provider_and_settings_json(
         int $provider_id,
@@ -57,6 +58,15 @@ class action_handler
 
         // Get the provider handler classname.
         $provider_handler_classname = $provider->get_classname();
+
+        // The stored classname can point at a provider that is no longer installed.
+        // Fail with the documented exception instead of a fatal "class not found".
+        if (!class_exists($provider_handler_classname)) {
+            throw new invalid_provider_instance_configuration(
+                'Provider instance ID: ' . $provider_id . ' refers to an unknown provider class: '
+                . $provider_handler_classname
+            );
+        }
 
         // Create the provider handler.
         return new $provider_handler_classname($this->base_factory, $config_json);

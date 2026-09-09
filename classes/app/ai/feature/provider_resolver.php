@@ -74,6 +74,12 @@ class provider_resolver
                 if (!$provider->get_is_preconfigured()) {
                     return false;
                 }
+                // A provider class can be gone (plugin removed, config left behind).
+                // class_implements() returns false on an unknown class, which would
+                // make in_array() throw a TypeError on PHP 8.
+                if (!class_exists($provider->get_classname())) {
+                    return false;
+                }
                 $config = json_decode($provider->get_config_json(), true, 512, JSON_THROW_ON_ERROR);
                 $supports = in_array($action_interface, class_implements($provider->get_classname()), true);
                 $is_default = isset($config['default_unless_explicitly_set']) && $config['default_unless_explicitly_set'];

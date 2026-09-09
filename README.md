@@ -123,6 +123,11 @@ None
 
 ## Change log
 
+* **1.0.9 (2026090900)**
+    - Fixed a TypeError when resolving a preconfigured provider whose class is no longer installed.
+    - Provider instances pointing at an unknown class now raise invalid_provider_instance_configuration instead of a fatal error.
+* **1.0.8 (2026082100)**
+    - Fixed embedding requests sending dimensions: 0 when no dimension is configured.
 * **1.0.7 (2026081801)**
     - Added vision action (read images with a dedicated vision model).
     - Added Scaleway provider.

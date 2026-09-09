@@ -624,4 +624,39 @@ class action_handler_test extends base_testcase
 
         $handler->vision(new entity(), 'Read this page', ['/tmp/page.jpg'], 99, ['foo' => 'bar']);
     }
+
+    /**
+     * A provider row can outlive the plugin that declared its class.
+     * That must surface as a configuration exception, not a fatal error.
+     */
+    public function test_get_provider_handler_with_unknown_provider_class(): void
+    {
+        $provider_entity = (new \local_mxaimanager\app\ai\provider\entity())
+            ->set_classname('local_mxaimanager\app\ai\provider\providers\removed_provider');
+
+        $provider_repository_mock = $this->createMock(\local_mxaimanager\app\ai\provider\repository::class);
+        $provider_repository_mock->expects($this->once())
+            ->method('get_by_id')
+            ->with(42)
+            ->willReturn($provider_entity);
+
+        $provider_factory_mock = $this->createMock(\local_mxaimanager\app\ai\provider\factory::class);
+        $provider_factory_mock->method('repository')->willReturn($provider_repository_mock);
+
+        $ai_factory_mock = $this->createMock(\local_mxaimanager\app\ai\factory::class);
+        $ai_factory_mock->method('provider')->willReturn($provider_factory_mock);
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $base_factory_mock->method('ai')->willReturn($ai_factory_mock);
+
+        $handler = new action_handler($base_factory_mock);
+
+        $method = new \ReflectionMethod(action_handler::class, 'get_provider_handler_provider_and_settings_json');
+        $method->setAccessible(true);
+
+        $this->expectException(invalid_provider_instance_configuration::class);
+        $this->expectExceptionMessage('refers to an unknown provider class');
+
+        $method->invoke($handler, 42, []);
+    }
 }

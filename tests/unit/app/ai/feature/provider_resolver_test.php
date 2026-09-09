@@ -672,4 +672,68 @@ class provider_resolver_test extends base_testcase
 
         $resolver->get_provider_and_config($action_interface);
     }
+
+    /**
+     * A preconfigured provider whose class is no longer installed must be skipped,
+     * not blow up class_implements()/in_array() with a TypeError.
+     */
+    public function test_get_provider_and_config_preconfigured_provider_with_missing_class_is_skipped(): void
+    {
+        $action_interface = 'chat_completion';
+
+        $feature_entity_mock = $this->createMock(entity::class);
+        $feature_entity_mock->method('get_id')->willReturn(10);
+
+        $base_factory_mock = $this->createMock(base_factory::class);
+        $ai_factory_mock = $this->createMock(ai_factory::class);
+        $feature_factory_mock = $this->createMock(feature_factory::class);
+        $feature_action_factory_mock = $this->createMock(feature_action_factory::class);
+        $feature_action_repository_mock = $this->createMock(
+            \local_mxaimanager\app\ai\feature\action\repository::class
+        );
+        $default_provider_factory_mock = $this->createMock(default_provider_factory::class);
+        $default_provider_repository_mock = $this->createMock(
+            \local_mxaimanager\app\ai\default_provider\repository::class
+        );
+        $provider_factory_mock = $this->createMock(provider_factory::class);
+        $provider_repository_mock = $this->createMock(\local_mxaimanager\app\ai\provider\repository::class);
+
+        $base_factory_mock->method('ai')->willReturn($ai_factory_mock);
+        $ai_factory_mock->method('feature')->willReturn($feature_factory_mock);
+        $ai_factory_mock->method('default_provider')->willReturn($default_provider_factory_mock);
+        $ai_factory_mock->method('provider')->willReturn($provider_factory_mock);
+        $feature_factory_mock->method('action')->willReturn($feature_action_factory_mock);
+        $feature_action_factory_mock->method('repository')->willReturn($feature_action_repository_mock);
+        $default_provider_factory_mock->method('repository')->willReturn($default_provider_repository_mock);
+        $provider_factory_mock->method('repository')->willReturn($provider_repository_mock);
+
+        $feature_action_repository_mock->expects($this->once())
+            ->method('get_by_feature_id_and_action_interface')
+            ->with(10, $action_interface)
+            ->willThrowException(new \dml_missing_record_exception('feature_action'));
+
+        $default_provider_repository_mock->expects($this->once())
+            ->method('get_by_action_interface')
+            ->with($action_interface)
+            ->willThrowException(new \dml_missing_record_exception('default_provider'));
+
+        // A real collection, so the filter callback actually runs.
+        $orphan = (new provider_entity())
+            ->set_id(7)
+            ->set_classname('local_mxaimanager\app\ai\provider\providers\removed_provider')
+            ->set_config_json('{"default_unless_explicitly_set": true}')
+            ->set_is_preconfigured(true);
+
+        $provider_repository_mock->expects($this->once())
+            ->method('get_all')
+            ->willReturn(new collection([$orphan]));
+
+        $resolver = new provider_resolver($base_factory_mock, $feature_entity_mock);
+
+        // Without the class_exists() guard this is a TypeError, not this exception.
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("No default provider configured for action interface {$action_interface}");
+
+        $resolver->get_provider_and_config($action_interface);
+    }
 }
